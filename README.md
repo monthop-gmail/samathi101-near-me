@@ -35,7 +35,34 @@
 - **Frontend:** Vanilla HTML5, CSS3, JavaScript (ES6+)
 - **Map Engine:** [Leaflet.js](https://leafletjs.com/) (OpenStreetMap API)
 - **Deployment & Hosting:** Cloudflare Pages (ผสานการทำงานกับ GitHub Actions)
-- **Data Tools:** มีสคริปต์ `fetch_and_process.py` (Python) เพื่อให้สามารถดึงข้อมูลใหม่จากฐานข้อมูลศูนย์และปรับโครงสร้างการแมปปิ้งภูมิภาคเองได้ (เผื่อกรณีต้องการอัปเดตล่วงหน้า)
+- **Environment:** มีชุดสคริปต์ Python ในโฟลเดอร์ `scripts/` สำหรับการจัดการข้อมูลและการ Mapping
+
+---
+
+## 🗄️ การจัดการข้อมูล (Data Management)
+
+ข้อมูลสาขา (`branches.json`) ของโปรเจกต์นี้สามารถอัปเดตให้ทันสมัยได้เสมอผ่านชุดสคริปต์ในโฟลเดอร์ `scripts/` ดังนี้:
+
+### 1. การดึงข้อมูลใหม่จากฐานข้อมูลหลัก (API)
+ใช้เมื่อต้องการดึงข้อมูลสาขาล่าสุดจาก Server หลัก:
+```bash
+# ต้องตั้งค่า Environment Variable ก่อนรัน (สอบถาม Token ได้ที่แอดมิน)
+export SAMATHI_API_TOKEN='Bearer YOUR_TOKEN_HERE'
+python3 scripts/fetch_and_process.py
+```
+
+### 2. การอัปเดตกลุ่มสาขา (Excel Mapping)
+ใช้เมื่อได้รับไฟล์ Excel อัปเดตกลุ่มสาขาจากทีมงาน ให้นำไฟล์ไปวางในโฟลเดอร์ `data/` แล้วรัน:
+```bash
+python3 scripts/update_branches.py
+```
+*สคริปต์นี้จะอ่านข้อมูลจาก Excel และนำไปเติมใน `branches.json` ให้โดยอัตโนมัติ (รองรับการรันซ้ำได้ตลอดเวลา)*
+
+### 3. การตรวจสอบความสอดคล้อง (Consistency Check)
+ใช้ตรวจสอบว่าข้อมูลในไฟล์ Excel ต่างๆ ในโฟลเดอร์ `data/` มีการระบุกลุ่มที่ขัดแย้งกันหรือไม่:
+```bash
+python3 scripts/check_consistency.py
+```
 
 ---
 

@@ -4,10 +4,15 @@ import os
 import re
 
 # --- Configuration ---
-BRANCHES_JSON = 'branches.json'
-EXCEL_LOOKUP = 'data/LookupBranch_H2_2568_20251121.xlsx'
-EXCEL_KSP = 'data/KSP_Branch.xlsx'
-OUTPUT_JSON = 'branches.json'
+# Get the directory where the script is located (scripts/)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Get the project root (one level up)
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+
+BRANCHES_JSON = os.path.join(ROOT_DIR, 'branches.json')
+EXCEL_LOOKUP = os.path.join(ROOT_DIR, 'data', 'LookupBranch_H2_2568_20251121.xlsx')
+EXCEL_KSP = os.path.join(ROOT_DIR, 'data', 'KSP_Branch.xlsx')
+OUTPUT_JSON = os.path.join(ROOT_DIR, 'branches.json')
 
 def normalize_branch_number(val):
     """Convert string branch number (like '001', '034') to int."""

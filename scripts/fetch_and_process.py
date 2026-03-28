@@ -7,9 +7,13 @@ import os
 # ความปลอดภัย: ห้ามฮาร์ดโค้ด Token ลงในไฟล์เด็ดขาด ให้ดึงผ่าน Environment Variable แทน
 TOKEN = os.environ.get('SAMATHI_API_TOKEN')
 
+# Get root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+
 API_HOST = 'api.samathi101.com'
 API_PATH = '/branch/all/front?limit=500&page=1&order=ASC'
-OUTPUT_FILE = 'branches.json'
+OUTPUT_FILE = os.path.join(ROOT_DIR, 'branches.json')
 
 REGION_MAP = {
     1: {"name6_th": "ภาคเหนือ", "name6_en": "Northern", "name4_th": "ภาคเหนือ", "name4_en": "Northern"},

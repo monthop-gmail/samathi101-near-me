@@ -1,13 +1,17 @@
 import pandas as pd
 import re
+import os
 
 def normalize(val):
     if pd.isna(val): return None
     match = re.search(r'\d+', str(val))
     return int(match.group()) if match else None
 
-df1 = pd.read_excel('data/KSP_Branch.xlsx')
-df2 = pd.read_excel('data/LookupBranch_H2_2568_20251121.xlsx')
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+
+df1 = pd.read_excel(os.path.join(ROOT_DIR, 'data', 'KSP_Branch.xlsx'))
+df2 = pd.read_excel(os.path.join(ROOT_DIR, 'data', 'LookupBranch_H2_2568_20251121.xlsx'))
 
 # KSP_Branch: ['ลำดับที่', 'หน่วยงาน', 'กลุ่ม', 'ศูนย์ที่ดูแล']
 # LookupBranch: ['กลุ่มสาขา', 'เลขสาขา', 'ชื่อสาขา', 'Region', 'Province']

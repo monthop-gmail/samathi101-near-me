@@ -151,9 +151,14 @@ function locateUser() {
             lng: position.coords.longitude
         };
 
-        map.flyTo([userLocation.lat, userLocation.lng], 12, {
-            duration: 1.5,
-            easeLinearity: 0.25
+        // Math Power: Center user in the VISIBLE 25% area at the top
+        // Header ~80px, Panel ~75% of height.
+        // flyToBounds is safer for complex padding
+        const userLatLng = L.latLng(userLocation.lat, userLocation.lng);
+        map.flyToBounds(userLatLng.toBounds(1000), { // 1km radius
+            paddingTopLeft: [0, 80],
+            paddingBottomRight: [0, window.innerHeight * 0.7],
+            duration: 1.5
         });
         
         // Add User Marker
@@ -224,12 +229,17 @@ function createBranchCard(branch, showDistance) {
         ${showDistance ? `<div class="branch-distance">ห่างจากคุณ ${branch.distance.toFixed(2)} กม.</div>` : ''}
     `;
     card.onclick = () => {
-        map.flyTo([branch.latitude, branch.longitude], 15, {
-            duration: 2,
-            easeLinearity: 0.25
+        const isMobile = window.innerWidth < 768;
+        const branchLatLng = L.latLng(branch.latitude, branch.longitude);
+        
+        map.flyToBounds(branchLatLng.toBounds(500), {
+            paddingTopLeft: [0, 80],
+            paddingBottomRight: [0, isMobile ? window.innerHeight * 0.5 : 0],
+            duration: 2
         });
+        
         openBranchDetails(branch.id);
-        if (window.innerWidth < 768) closePanel();
+        if (isMobile) closePanel();
     };
     return card;
 }

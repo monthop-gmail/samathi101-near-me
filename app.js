@@ -172,7 +172,29 @@ function openBranchDetails(id) {
     document.getElementById('branch-modal').style.display = 'flex';
 }
 
-// UI Helpers
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Events
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    loadBranches();
+
+    document.getElementById('locate-me-btn').onclick = locateUser;
+    
+    document.querySelector('.close-btn').onclick = () => {
+        document.getElementById('branch-modal').style.display = 'none';
+    };
+
+    window.onclick = (event) => {
+        const modal = document.getElementById('branch-modal');
+        if (event.target == modal) modal.style.display = 'none';
+    };
+
     // Robust Bottom Sheet interactions
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');

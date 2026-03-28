@@ -23,15 +23,28 @@ function initMap() {
     fitThailand();
 }
 
-// Fit map to Thailand bounds
+// Fit map to Thailand bounds or markers
 function fitThailand() {
-    if (map) {
+    if (!map) return;
+    
+    // 1. Try to fit based on branches (Markers) for accuracy
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.flyToBounds(group.getBounds(), {
+            padding: [50, 50], // Add padding so it's not too tight
+            duration: 1.5
+        });
+    } else {
+        // 2. Fallback to general Thailand bounds
         map.flyToBounds([
-            [5.61, 97.34],   // South-West (Satun/Yala)
-            [20.46, 105.63]  // North-East (Chiang Rai/Ubon)
-        ], { duration: 1.5 });
-        closePanel(); // Close panel so user can see the full map
+            [5.6, 97.3],   // South-West
+            [20.5, 105.7]  // North-East
+        ], { 
+            padding: [40, 40],
+            duration: 1.5 
+        });
     }
+    closePanel();
 }
 
 // Load Branches

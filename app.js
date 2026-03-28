@@ -18,9 +18,6 @@ function initMap() {
     L.control.zoom({
         position: 'bottomright'
     }).addTo(map);
-
-    // Set initial view to Thailand
-    fitThailand();
 }
 
 // Fit map to Thailand with Mathematical Centroid (True Balance)
@@ -89,6 +86,9 @@ async function loadBranches() {
         
         renderMarkers();
         renderAllBranchesList();
+        
+        // Fit map for the first time AFTER data is ready for consistency
+        fitThailand();
     } catch (error) {
         console.error('Error loading branches:', error);
         showToast('ไม่สามารถโหลดข้อมูลสาขาได้');

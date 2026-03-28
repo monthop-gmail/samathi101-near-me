@@ -1,0 +1,14 @@
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/app.js
+  Cache-Control: no-cache
+
+/index.css
+  Cache-Control: no-cache
+
+/branches.json
+  Cache-Control: no-cache

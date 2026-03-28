@@ -10,7 +10,9 @@ function initMap() {
         attributionControl: false
     }).setView([13.7367, 100.5231], 6); // Default to Thailand center
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Normal / Light Map style (CartoDB Voyager)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
     }).addTo(map);
 
@@ -199,6 +201,22 @@ function showToast(message) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// Panel Control Functions
+function openPanel() {
+    const p = document.getElementById('side-panel');
+    if (p) p.classList.remove('collapsed');
+}
+
+function closePanel() {
+    const p = document.getElementById('side-panel');
+    if (p) p.classList.add('collapsed');
+}
+
+function togglePanel() {
+    const p = document.getElementById('side-panel');
+    if (p) p.classList.toggle('collapsed');
+}
+
 // Events
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
@@ -216,20 +234,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Simplified Bottom Sheet Interaction (Click/Tap only)
-    const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
+    
+    handle.onclick = togglePanel;
 
-    function openPanel() {
-        panel.classList.remove('collapsed');
-    }
-
-    function closePanel() {
-        panel.classList.add('collapsed');
-    }
-
-    handle.onclick = () => {
-        panel.classList.toggle('collapsed');
-    };
+    // Close panel when clicking on the map (so users aren't trapped)
+    map.on('click', () => {
+        closePanel();
+    });
 
     // Search input: Filter list without auto-expanding
     document.getElementById('branch-search').oninput = (e) => {

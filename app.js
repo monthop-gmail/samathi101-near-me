@@ -36,10 +36,11 @@ function fitThailand() {
         
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
-            // Balanced Padding: 80px for Header, 20px for sides
+            // Math Correction: Accounting for Header (top) and Bottom Handle (48px handle)
+            // Using 80px on both top and bottom to create a perfect Safe Area
             map.flyToBounds(group.getBounds(), {
                 paddingTopLeft: [20, 80],
-                paddingBottomRight: [20, 20],
+                paddingBottomRight: [20, 80],
                 maxZoom: 12,
                 duration: 1.5
             });

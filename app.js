@@ -98,6 +98,7 @@ function locateUser() {
         openPanel(); // Expand to show results (Map 25%, List 75%)
     }, error => {
         showToast('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
+        document.getElementById('nearest-branches-list').innerHTML = `<div class="location-prompt" style="color:#ff6b6b; font-size: 0.9rem; text-align: center; padding: 1rem 0;">ไม่ได้รับอนุญาตให้ใช้พิกัดตำแหน่ง</div>`;
     });
 }
 

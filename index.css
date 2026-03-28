@@ -1,13 +1,14 @@
 :root {
-    --primary-color: #4f46e5;
-    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    --primary-color: #6366f1;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     --bg-dark: #0f172a;
     --bg-card: rgba(30, 41, 59, 0.7);
     --text-main: #f8fafc;
     --text-dim: #94a3b8;
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    --text-muted: #64748b;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
 }
 
@@ -70,11 +71,19 @@ h1 {
 
 .search-bar {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
-    background: var(--glass-bg);
-    padding: 0.25rem;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 16px;
     border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.search-bar:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 #branch-search {
@@ -82,9 +91,13 @@ h1 {
     background: transparent;
     border: none;
     color: white;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.75rem;
     font-family: inherit;
     font-size: 1rem;
+}
+
+#branch-search::placeholder {
+    color: var(--text-muted);
 }
 
 #branch-search:focus {
@@ -95,19 +108,25 @@ h1 {
     background: var(--primary-gradient);
     border: none;
     color: white;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
 }
 
 .action-btn:active {
-    transform: scale(0.95);
+    transform: translateY(0) scale(0.95);
 }
 
 main {
@@ -181,64 +200,96 @@ h2 {
 .branch-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 1.25rem;
     margin-bottom: 1rem;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
 .branch-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(79, 70, 229, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.branch-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--primary-gradient);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.branch-card:hover::before {
-    opacity: 1;
+.branch-card:active {
+    transform: scale(0.98);
 }
 
 .branch-name {
     font-weight: 600;
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.15rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-main);
 }
 
 .branch-location {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.branch-location::before {
+    content: '📍';
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
 
 .branch-distance {
-    display: inline-block;
-    margin-top: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #10b981;
-    background: rgba(16, 185, 129, 0.1);
-    padding: 4px 10px;
-    border-radius: 20px;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 5px 12px;
+    border-radius: 10px;
 }
 
 /* Custom Marker */
-.custom-marker {
+.custom-pin {
+    width: 32px;
+    height: 32px;
     background: var(--primary-gradient);
-    border: 3px solid white;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-pin::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: white;
     border-radius: 50%;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    transform: rotate(45deg);
+}
+
+.pulse {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 50%;
+    animation: pulse-animation 2s infinite;
+    z-index: -1;
+}
+
+@keyframes pulse-animation {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
 }
 
 /* Modal */

@@ -27,10 +27,10 @@ function initMap() {
 // Fit map to Thailand bounds
 function fitThailand() {
     if (map) {
-        map.fitBounds([
+        map.flyToBounds([
             [5.61, 97.34],   // South-West (Satun/Yala)
             [20.46, 105.63]  // North-East (Chiang Rai/Ubon)
-        ]);
+        ], { duration: 1.5 });
         closePanel(); // Close panel so user can see the full map
     }
 }
@@ -55,20 +55,26 @@ function renderMarkers() {
 
     branches.forEach(branch => {
         if (branch.latitude && branch.longitude) {
-            const marker = L.circleMarker([branch.latitude, branch.longitude], {
-                radius: 8,
-                fillColor: "#4f46e5",
-                color: "#fff",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
+            const customIcon = L.divIcon({
+                className: 'custom-marker-wrapper',
+                html: `
+                    <div class="pulse"></div>
+                    <div class="custom-pin"></div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+
+            const marker = L.marker([branch.latitude, branch.longitude], {
+                icon: customIcon
             }).addTo(map);
 
             marker.bindPopup(`
                 <div class="popup-content">
-                    <strong>สาขาที่ ${branch.number}: ${branch.name}</strong><br>
-                    <p>${branch.owner || ''}</p>
-                    <p>${branch.owner_tel || ''}</p>
+                    <strong style="color:var(--primary-color)">สาขาที่ ${branch.number}</strong>
+                    <div style="font-weight:600; margin: 4px 0;">${branch.name}</div>
+                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${branch.owner || ''}</p>
                     <button onclick="openBranchDetails(${branch.id})" class="popup-btn">ดูรายละเอียด</button>
                 </div>
             `);
@@ -116,10 +122,20 @@ function locateUser() {
             lng: position.coords.longitude
         };
 
-        map.setView([userLocation.lat, userLocation.lng], 12);
+        map.flyTo([userLocation.lat, userLocation.lng], 12, {
+            duration: 1.5,
+            easeLinearity: 0.25
+        });
         
         // Add User Marker
-        L.marker([userLocation.lat, userLocation.lng]).addTo(map)
+        const userIcon = L.divIcon({
+           className: 'user-marker',
+           html: '<div style="background:#10b981; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(16,185,129,0.5)"></div>',
+           iconSize: [16, 16],
+           iconAnchor: [8, 8]
+        });
+
+        L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
             .bindPopup('ตำแหน่งของคุณ').openPopup();
 
         updateNearestBranches();
@@ -179,7 +195,10 @@ function createBranchCard(branch, showDistance) {
         ${showDistance ? `<div class="branch-distance">ห่างจากคุณ ${branch.distance.toFixed(2)} กม.</div>` : ''}
     `;
     card.onclick = () => {
-        map.setView([branch.latitude, branch.longitude], 15);
+        map.flyTo([branch.latitude, branch.longitude], 15, {
+            duration: 2,
+            easeLinearity: 0.25
+        });
         openBranchDetails(branch.id);
         if (window.innerWidth < 768) closePanel();
     };

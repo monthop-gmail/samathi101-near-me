@@ -95,6 +95,7 @@ function locateUser() {
 
         updateNearestBranches();
         showToast('พบสาขาใกล้คุณ 5 อันดับแรก');
+        openPanel(); // Expand to show results (Map 25%, List 75%)
     }, error => {
         showToast('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
     });
@@ -227,6 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
              const card = createBranchCard(b, false);
              listElement.appendChild(card);
         });
+        
+        if (query.length > 0) openPanel(); else closePanel();
     };
 });
 

@@ -94,8 +94,7 @@ function locateUser() {
             .bindPopup('ตำแหน่งของคุณ').openPopup();
 
         updateNearestBranches();
-        showToast('พบสาขาที่อยู่ใกล้คุณแล้ว');
-        // Do not auto-open panel to avoid covering the map
+        showToast('พบสาขาใกล้คุณ 5 อันดับแรก');
     }, error => {
         showToast('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
     });
@@ -205,61 +204,68 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == modal) modal.style.display = 'none';
     };
 
-    // Bottom Sheet interactions (Drag & Click)
+    // Improved Bottom Sheet interactions (Pointer & Touch)
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
     let startY = 0;
-    let currentY = 0;
     let isDragging = false;
+    let startTransform = 0;
 
-    handle.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
+    const onStart = (y) => {
+        startY = y;
         isDragging = true;
         panel.style.transition = 'none';
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        const deltaY = currentY - startY;
-        
-        // Only allow dragging down if not already collapsed, or up if collapsed
-        if (deltaY > 0 || (panel.classList.contains('collapsed') && deltaY < 0)) {
-            // Potential for smooth drag here if needed
+        const transform = window.getComputedStyle(panel).transform;
+        if (transform !== 'none') {
+            const matrix = new DOMMatrixReadOnly(transform);
+            startTransform = matrix.m42;
+        } else {
+            startTransform = 0;
         }
-    });
+    };
 
-    document.addEventListener('touchend', (e) => {
+    const onMove = (y) => {
+        if (!isDragging) return;
+        const deltaY = y - startY;
+        // Optional: Implement real-time drag if desired, but toggle is safer for now
+    };
+
+    const onEnd = (y) => {
         if (!isDragging) return;
         isDragging = false;
         panel.style.transition = '';
+        const deltaY = y - startY;
         
-        const deltaY = e.changedTouches[0].clientY - startY;
-        if (deltaY > 50) {
+        if (deltaY > 30) {
             closePanel();
-        } else if (deltaY < -50) {
+        } else if (deltaY < -30) {
             openPanel();
         } else {
-            // Toggle if it was just a tap
+            // If it was just a tap/click on the handle, toggle it
             panel.classList.toggle('collapsed');
         }
-    });
-
-    handle.onclick = () => {
-        panel.classList.toggle('collapsed');
     };
 
-    // Search
+    // Touch events
+    handle.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY));
+    document.addEventListener('touchmove', (e) => onMove(e.touches[0].clientY), { passive: true });
+    document.addEventListener('touchend', (e) => onEnd(e.changedTouches[0].clientY));
+
+    // Mouse events (for desktop/testing)
+    handle.addEventListener('mousedown', (e) => onStart(e.clientY));
+    document.addEventListener('mousemove', (e) => onMove(e.clientY));
+    document.addEventListener('mouseup', (e) => onEnd(e.clientY));
+
+    // Search input: Ensure panel DOES NOT open while typing unless user wants it
     document.getElementById('branch-search').oninput = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = branches.filter(b => 
             b.name.toLowerCase().includes(query) || 
             (b.province && b.province.name_th.toLowerCase().includes(query)) ||
-            (b.province && b.province.name_en.toLowerCase().includes(query))
+            (b.province && b.province.name_en.toLowerCase().includes(query)) ||
+            (b.number && b.number.toString().includes(query))
         );
         
-        // Update markers if needed or just scroll list
-        // For now just update list
         const listElement = document.getElementById('all-branches-list');
         listElement.innerHTML = '';
         filtered.forEach(b => {
@@ -267,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
              listElement.appendChild(card);
         });
         
-        // Do not auto-open panel during search to keep map visible
+        // Removed openPanel() - User must explicitly open to see results
     };
 });
 

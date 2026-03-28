@@ -38,7 +38,7 @@ header {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding: 1rem;
-    z-index: 1000;
+    z-index: 1005;
     border-bottom: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;

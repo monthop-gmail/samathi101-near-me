@@ -256,13 +256,13 @@ h2 {
 
 /* Custom Marker */
 .custom-pin {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     background: var(--primary-gradient);
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     border: 2px solid white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -270,8 +270,8 @@ h2 {
 
 .custom-pin::after {
     content: '';
-    width: 12px;
-    height: 12px;
+    width: 8px;
+    height: 8px;
     background: white;
     border-radius: 50%;
     transform: rotate(45deg);
@@ -279,8 +279,8 @@ h2 {
 
 .pulse {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 24px;
+    height: 24px;
     background: rgba(99, 102, 241, 0.4);
     border-radius: 50%;
     animation: pulse-animation 2s infinite;
@@ -288,8 +288,8 @@ h2 {
 }
 
 @keyframes pulse-animation {
-    0% { transform: scale(0.5); opacity: 1; }
-    100% { transform: scale(2.5); opacity: 0; }
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
 }
 
 /* Modal */

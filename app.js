@@ -60,9 +60,9 @@ function renderMarkers() {
                     <div class="pulse"></div>
                     <div class="custom-pin"></div>
                 `,
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
-                popupAnchor: [0, -32]
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24]
             });
 
             const marker = L.marker([branch.latitude, branch.longitude], {

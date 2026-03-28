@@ -149,7 +149,7 @@ main {
     border-radius: 3px;
     margin: 15px auto;
     opacity: 0.6;
-    cursor: grab;
+    cursor: pointer;
     flex-shrink: 0;
 }
 

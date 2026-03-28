@@ -195,68 +195,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == modal) modal.style.display = 'none';
     };
 
-    // Robust Bottom Sheet interactions
+    // Simplified Bottom Sheet Interaction (Click/Tap only)
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
-    let startY = 0;
-    let isDragging = false;
-    let lastY = 0;
 
     function openPanel() {
         panel.classList.remove('collapsed');
-        panel.style.transform = ''; 
     }
 
     function closePanel() {
         panel.classList.add('collapsed');
-        panel.style.transform = '';
     }
 
-    // Toggle on simple click
-    handle.onclick = (e) => {
-        if (Math.abs(lastY - startY) < 10) { // If it wasn't a significant drag
-            panel.classList.toggle('collapsed');
-        }
+    handle.onclick = () => {
+        panel.classList.toggle('collapsed');
     };
 
-    // Touch Drag logic
-    handle.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
-        lastY = startY;
-        isDragging = true;
-        panel.style.transition = 'none';
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        const y = e.touches[0].clientY;
-        lastY = y;
-        const deltaY = y - startY;
-        
-        // Visual feedback during drag
-        if (panel.classList.contains('collapsed')) {
-             if (deltaY < 0) panel.style.transform = `translateY(calc(100% - 70px + ${deltaY}px))`;
-        } else {
-             if (deltaY > 0) panel.style.transform = `translateY(${deltaY}px)`;
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        panel.style.transition = '';
-        
-        const totalDelta = lastY - startY;
-        if (totalDelta < -50) {
-            openPanel();
-        } else if (totalDelta > 50) {
-            closePanel();
-        } else {
-            panel.style.transform = ''; // Reset to class-based position
-        }
-    });
-
-    // Search and Locate must NOT call openPanel
+    // Search input: Filter list without auto-expanding
     document.getElementById('branch-search').oninput = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = branches.filter(b => 

@@ -204,54 +204,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == modal) modal.style.display = 'none';
     };
 
-    // Improved Bottom Sheet interactions (Pointer & Touch)
+    // Improved Bottom Sheet interactions (Pointer & Touch) - Real-time smooth drag
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
     let startY = 0;
     let isDragging = false;
-    let startTransform = 0;
+    let startTranslateY = 0;
 
     const onStart = (y) => {
         startY = y;
         isDragging = true;
         panel.style.transition = 'none';
+        
+        // Get current transform
         const transform = window.getComputedStyle(panel).transform;
         if (transform !== 'none') {
             const matrix = new DOMMatrixReadOnly(transform);
-            startTransform = matrix.m42;
+            startTranslateY = matrix.m42;
         } else {
-            startTransform = 0;
+            startTranslateY = 0;
         }
     };
 
     const onMove = (y) => {
         if (!isDragging) return;
         const deltaY = y - startY;
-        // Optional: Implement real-time drag if desired, but toggle is safer for now
+        let newTranslateY = startTranslateY + deltaY;
+        
+        // Boundaries: Don't drag too high or too low
+        const minTranslateY = 0; // Fully expanded
+        const maxTranslateY = panel.offsetHeight - 70; // Collapsed
+        
+        if (newTranslateY < minTranslateY) newTranslateY = minTranslateY * 0.5; // Resistance
+        
+        panel.style.transform = `translateY(${newTranslateY}px)`;
     };
 
     const onEnd = (y) => {
         if (!isDragging) return;
         isDragging = false;
-        panel.style.transition = '';
+        panel.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        panel.style.transform = ''; // Let classes handle it
+        
         const deltaY = y - startY;
         
-        if (deltaY > 30) {
+        if (deltaY > 50) {
             closePanel();
-        } else if (deltaY < -30) {
+        } else if (deltaY < -50) {
             openPanel();
         } else {
-            // If it was just a tap/click on the handle, toggle it
-            panel.classList.toggle('collapsed');
+            // Threshold for toggle if it was a small movement
+            if (Math.abs(deltaY) < 10) {
+                panel.classList.toggle('collapsed');
+            } else {
+                // Return to original state if move was small
+                if (panel.classList.contains('collapsed')) closePanel(); else openPanel();
+            }
         }
     };
 
     // Touch events
-    handle.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY));
-    document.addEventListener('touchmove', (e) => onMove(e.touches[0].clientY), { passive: true });
+    handle.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY), { passive: false });
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            onMove(e.touches[0].clientY);
+            e.preventDefault();
+        }
+    }, { passive: false });
     document.addEventListener('touchend', (e) => onEnd(e.changedTouches[0].clientY));
 
-    // Mouse events (for desktop/testing)
+    // Mouse events
     handle.addEventListener('mousedown', (e) => onStart(e.clientY));
     document.addEventListener('mousemove', (e) => onMove(e.clientY));
     document.addEventListener('mouseup', (e) => onEnd(e.clientY));

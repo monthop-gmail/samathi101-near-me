@@ -23,7 +23,8 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     overflow: hidden;
-    height: 100vh;
+    height: 100vh;       /* Fallback for older browsers */
+    height: 100dvh;      /* Dynamic viewport fixes Chrome/Brave mobile bottom bar */
     width: 100vw;
 }
 
@@ -139,7 +140,7 @@ main {
 }
 
 #side-panel.collapsed {
-    transform: translateY(calc(100% - 70px));
+    transform: translateY(calc(100% - 90px));
 }
 
 .panel-handle {

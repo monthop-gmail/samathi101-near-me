@@ -8,11 +8,10 @@ function initMap() {
     map = L.map('map', {
         zoomControl: false,
         attributionControl: false
-    });
+    }).setView([13.7367, 100.5231], 6); // Set initial view to avoid uninitialized state
 
-    // L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     // Normal / Light Map style (CartoDB Voyager)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
         maxZoom: 19
     }).addTo(map);
 

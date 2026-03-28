@@ -1,0 +1,23 @@
+# AI Development Constraints & Security Rules
+
+You are assisting with the "Samathi101 Near Me" PWA Project.
+You must strictly adhere to the following rules, especially regarding SECURITY:
+
+1. **NO HARDCODING SECRETS (CRITICAL):**
+   - NEVER hardcode API keys, JWT tokens, Bearer tokens, or passwords into ANY source code files (`.js`, `.py`, `.html`, etc.).
+   - If a script requires authentication to run (e.g., fetching data), ALWAYS instruct the user to use Environment Variables (`os.environ.get()` in Python, `process.env` in Node, etc.).
+   
+2. **ENVIRONMENT FILE HANDLING:**
+   - Always assume the project uses a `.env` file for secrets during local development.
+   - If providing examples, always create or update an `.env.example` file instead of putting the real secret in the code or chat.
+   - ALWAYS verify that `.env` is explicitly listed in `.gitignore`.
+
+3. **PWA CONSTRAINTS:**
+   - For frontend changes, remember this is a Progressive Web App (PWA). 
+   - We utilize a Network-First caching strategy via `sw.js` and `_headers` to prevent UI staleness. Do not override this logic to Cache-First without explicit user instruction.
+   
+4. **MOBILE-FIRST UI:**
+   - The UI uses `100dvh` to calculate viewport heights properly on mobile browsers (preventing bottom sheets from getting lost under navigation bars).
+   - Do not revert viewport heights to `100vh`.
+
+Failure to follow the security rules (Rule 1 & 2) is a critical violation of this project's guidelines.

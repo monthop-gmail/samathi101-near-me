@@ -94,7 +94,8 @@ function locateUser() {
             .bindPopup('ตำแหน่งของคุณ').openPopup();
 
         updateNearestBranches();
-        openPanel();
+        showToast('พบสาขาที่อยู่ใกล้คุณแล้ว');
+        // Do not auto-open panel to avoid covering the map
     }, error => {
         showToast('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
     });
@@ -204,10 +205,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == modal) modal.style.display = 'none';
     };
 
-    // Bottom Sheet interactions
+    // Bottom Sheet interactions (Drag & Click)
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
-    
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        panel.style.transition = 'none';
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        // Only allow dragging down if not already collapsed, or up if collapsed
+        if (deltaY > 0 || (panel.classList.contains('collapsed') && deltaY < 0)) {
+            // Potential for smooth drag here if needed
+        }
+    });
+
+    document.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        panel.style.transition = '';
+        
+        const deltaY = e.changedTouches[0].clientY - startY;
+        if (deltaY > 50) {
+            closePanel();
+        } else if (deltaY < -50) {
+            openPanel();
+        } else {
+            // Toggle if it was just a tap
+            panel.classList.toggle('collapsed');
+        }
+    });
+
     handle.onclick = () => {
         panel.classList.toggle('collapsed');
     };
@@ -230,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
              listElement.appendChild(card);
         });
         
-        if (query.length > 0) openPanel();
+        // Do not auto-open panel during search to keep map visible
     };
 });
 

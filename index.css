@@ -91,12 +91,13 @@ h1 {
     outline: none;
 }
 
-#locate-me-btn {
+.action-btn {
     background: var(--primary-gradient);
     border: none;
     color: white;
     width: 44px;
     height: 44px;
+    flex-shrink: 0;
     border-radius: 10px;
     cursor: pointer;
     display: flex;
@@ -105,7 +106,7 @@ h1 {
     transition: transform 0.2s;
 }
 
-#locate-me-btn:active {
+.action-btn:active {
     transform: scale(0.95);
 }
 

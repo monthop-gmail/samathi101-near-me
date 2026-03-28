@@ -21,3 +21,7 @@ You must strictly adhere to the following rules, especially regarding SECURITY:
    - Do not revert viewport heights to `100vh`.
 
 Failure to follow the security rules (Rule 1 & 2) is a critical violation of this project's guidelines.
+
+5. **GIT & COMMAND LINE OPERATIONS:**
+   - ALWAYS use WSL (`wsl git ...` or `wsl gh ...`) for any Git or GitHub operations in this project.
+   - NEVER use Windows PowerShell for Git/GitHub commands to prevent environment-specific corruption and UTF-8 encoding issues.

@@ -8,7 +8,7 @@ function initMap() {
     map = L.map('map', {
         zoomControl: false,
         attributionControl: false
-    }).setView([13.7367, 100.5231], 6); // Default to Thailand center
+    });
 
     // L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     // Normal / Light Map style (CartoDB Voyager)
@@ -19,6 +19,20 @@ function initMap() {
     L.control.zoom({
         position: 'bottomright'
     }).addTo(map);
+
+    // Set initial view to Thailand
+    fitThailand();
+}
+
+// Fit map to Thailand bounds
+function fitThailand() {
+    if (map) {
+        map.fitBounds([
+            [5.61, 97.34],   // South-West (Satun/Yala)
+            [20.46, 105.63]  // North-East (Chiang Rai/Ubon)
+        ]);
+        closePanel(); // Close panel so user can see the full map
+    }
 }
 
 // Load Branches
@@ -223,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadBranches();
 
     document.getElementById('locate-me-btn').onclick = locateUser;
+    document.getElementById('fit-thailand-btn').onclick = fitThailand;
     
     document.querySelector('.close-btn').onclick = () => {
         document.getElementById('branch-modal').style.display = 'none';

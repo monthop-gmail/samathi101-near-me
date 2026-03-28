@@ -1,0 +1,9 @@
+# Local Environments
+.env
+
+# MacOS hidden files
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

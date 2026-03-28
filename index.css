@@ -134,7 +134,8 @@ main {
     border: 1px solid var(--glass-border);
     z-index: 1001;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 75vh;
+    height: 75%; /* Limit height to 75% of main container so map is exactly 25% visible */
+    max-height: calc(100dvh - 120px); /* Absolute safety boundary to not overlap header */
     display: flex;
     flex-direction: column;
 }
@@ -142,6 +143,7 @@ main {
 #side-panel.collapsed {
     transform: translateY(calc(100% - 90px));
 }
+
 
 .panel-handle {
     width: 60px;

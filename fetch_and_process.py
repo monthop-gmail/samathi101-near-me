@@ -4,8 +4,9 @@ import urllib.parse
 import os
 
 # --- การตั้งค่า (Configuration) ---
-# หมายเหตุ: โทเค็น Bearer มีอายุจำกัด หากหมดอายุให้ทำตามขั้นตอนใน walkthrough.md เพื่อรับโทเค็นใหม่
-TOKEN = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjM3MzAwNzY5YTA3ZTA1MTE2ZjdlNTEzOGZhOTA5MzY4NWVlYmMyNDAiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTW9udGhvcCBTdW1hbmEiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EtL0FPaDE0R2d5am9mU1FfelVSLUtGRU5VSFJWQW0zMnV0bjBORmw0OUJXdVF5NkE9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vd2lsbC1wb3dlci1wcm9kIiwiYXVkIjoid2lsbC1wb3dlci1wcm9kIiwiYXV0aF90aW1lIjoxNzcwNDAwOTgzLCJ1c2VyX2lkIjoiZGFmWHhmWERBS1NzaG9wQ3lrUlJpZzRyNVM3MyIsInN1YiI6ImRhZlh4ZlhEQUtTc2hvcEN5a1JSaWc0cjVTNzMiLCJpYXQiOjE3NzQ2Njg1NjIsImV4cCI6MTc3NDY3MjE2MiwiZW1haWwiOiJtb250aG9wQHN1bWFuYS5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExNzIyMTc2NjI1MTYyODY5NTczMiJdLCJlbWFpbCI6WyJtb250aG9wQHN1bWFuYS5vcmciXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.GcEtyV2Nvg-HqZD5CsEsMWIhRxBVP6k1SlkWynoardp9zKrdNxltxLT5umlD9jCqXbEZTpZUG1mtQV-4wRVNShgl3xpptyEBrZ05Xb5wmHM_4fLoNIJRbNC3jib_0ZRwP_I6lPxxjbCpVPZDjAKi1q-GZMbvRueKrSS4xw8KJv2YNNI3kCnLJATsWCzVXkuCMCikO483qR47vMXS5iUhS1WYz9PDwlBBf2HI4471j4mCsu4UBWjsHrjrgGX2lCTcnKUDhz6MkxgqionwQ8tOdyrK7aGOgRiIodKs1FUTgPhBKDCsQFMjC367uetplsFfabbbFr7jFfBWv1n2KhlxIA'
+# ความปลอดภัย: ห้ามฮาร์ดโค้ด Token ลงในไฟล์เด็ดขาด ให้ดึงผ่าน Environment Variable แทน
+TOKEN = os.environ.get('SAMATHI_API_TOKEN')
+
 API_HOST = 'api.samathi101.com'
 API_PATH = '/branch/all/front?limit=500&page=1&order=ASC'
 OUTPUT_FILE = 'branches.json'
@@ -20,6 +21,11 @@ REGION_MAP = {
 }
 
 def fetch_data():
+    if not TOKEN:
+        print("ERROR: ไม่พบ SAMATHI_API_TOKEN ใน Environment Variables")
+        print("กรุณารันคำสั่ง: export SAMATHI_API_TOKEN='Bearer your-token'")
+        return None
+
     print(f"Fetching data from {API_HOST}...")
     headers = {'Authorization': TOKEN}
     conn = http.client.HTTPSConnection(API_HOST)

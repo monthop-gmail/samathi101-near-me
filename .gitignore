@@ -8,5 +8,3 @@
 __pycache__/
 *.pyc
 .venv/
-research_data.py
-check_consistency.py

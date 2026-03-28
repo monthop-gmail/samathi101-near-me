@@ -23,28 +23,31 @@ function initMap() {
     fitThailand();
 }
 
-// Fit map to Thailand bounds or markers
+// Fit map to Thailand bounds or markers with better centering
 function fitThailand() {
     if (!map) return;
     
-    // 1. Try to fit based on branches (Markers) for accuracy
-    if (markers.length > 0) {
-        const group = new L.featureGroup(markers);
-        map.flyToBounds(group.getBounds(), {
-            padding: [50, 50], // Add padding so it's not too tight
-            duration: 1.5
-        });
-    } else {
-        // 2. Fallback to general Thailand bounds
-        map.flyToBounds([
-            [5.6, 97.3],   // South-West
-            [20.5, 105.7]  // North-East
-        ], { 
-            padding: [40, 40],
-            duration: 1.5 
-        });
-    }
     closePanel();
+    
+    // Give a small delay for UI to settle
+    setTimeout(() => {
+        if (markers.length > 0) {
+            const group = new L.featureGroup(markers);
+            map.flyToBounds(group.getBounds(), {
+                paddingTopLeft: [20, 100], // Extra padding for Header & Side Balance
+                paddingBottomRight: [20, 20],
+                maxZoom: 12,
+                duration: 1.5
+            });
+        } else {
+            // Golden Thailand View: Perfectly centered for most screens
+            // Adjusted slightly to account for Thailand's "handled axe" shape
+            const isMobile = window.innerWidth < 768;
+            map.flyTo([13.5, 101.0], isMobile ? 5.5 : 6, { 
+                duration: 1.5 
+            });
+        }
+    }, 200);
 }
 
 // Load Branches

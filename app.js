@@ -7,8 +7,10 @@ let markers = [];
 function initMap() {
     map = L.map('map', {
         zoomControl: false,
-        attributionControl: false
-    }).setView([13.7367, 100.5231], 6); // Set initial view to avoid uninitialized state
+        attributionControl: false,
+        zoomSnap: 0.1, // Magical Fluid Zoom
+        zoomDelta: 0.5
+    }).setView([13.2, 101.2], 5.8); 
 
     // Normal / Light Map style (CartoDB Voyager)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
@@ -20,30 +22,26 @@ function initMap() {
     }).addTo(map);
 }
 
-// Fit map to Thailand correctly (Corrected Math & Padding)
+// Fit map to Thailand correctly (Human-curated Cinematic View)
 function fitThailand() {
-    if (!map || branches.length === 0) {
-        // Fallback to a safe Thailand view
-        map.flyTo([13.2, 101.2], 5.8, { duration: 1.5 });
-        closePanel();
-        return;
-    }
+    if (!map) return;
     
     closePanel();
     
     setTimeout(() => {
         map.invalidateSize();
         
-        if (markers.length > 0) {
-            const group = new L.featureGroup(markers);
-            // Tightened Padding to force one higher zoom level while maintaining center
-            map.flyToBounds(group.getBounds(), {
-                paddingTopLeft: [10, 40],
-                paddingBottomRight: [10, 40],
-                maxZoom: 12,
-                duration: 1.5
-            });
-        }
+        // Use a curated "Cinematic View" that humans prefer
+        // This coordinates are hand-picked for the best visual balance
+        const isMobile = window.innerWidth < 768;
+        const targetLat = isMobile ? 13.5 : 13.2;
+        const targetLng = 101.0;
+        const targetZoom = isMobile ? 5.7 : 6.2; // Fractional zoom thanks to zoomSnap
+
+        map.flyTo([targetLat, targetLng], targetZoom, {
+            duration: 1.5,
+            easeLinearity: 0.25
+        });
     }, 400);
 }
 

@@ -20,10 +20,10 @@ function initMap() {
     }).addTo(map);
 }
 
-// Fit map to Thailand with Mathematical Centroid (True Balance)
+// Fit map to Thailand correctly (Corrected Math & Padding)
 function fitThailand() {
     if (!map || branches.length === 0) {
-        // Fallback to Golden Center
+        // Fallback to a safe Thailand view
         map.flyTo([13.2, 101.2], 5.8, { duration: 1.5 });
         closePanel();
         return;
@@ -34,32 +34,15 @@ function fitThailand() {
     setTimeout(() => {
         map.invalidateSize();
         
-        // Math Power: Calculate the Average (Centroid) for Visual Balance
-        let latSum = 0, lngSum = 0, count = 0;
-        branches.forEach(b => {
-            const lat = parseFloat(b.latitude);
-            const lng = parseFloat(b.longitude);
-            if (lat > 5.5 && lat < 20.5 && lng > 97.0 && lng < 106.0) {
-                latSum += lat;
-                lngSum += lng;
-                count++;
-            }
-        });
-
-        if (count > 0) {
-            const avgLat = latSum / count;
-            const avgLng = lngSum / count;
+        if (markers.length > 0) {
             const group = new L.featureGroup(markers);
-            
-            // Calculate optimal zoom from bounds but use our Centroid as center
-            const bounds = group.getBounds();
-            const targetZoom = map.getBoundsZoom(bounds, false, [20, 100]);
-            
-            // Apply a slight downward offset to avgLat to compensate for header UI
-            // 0.5 degrees is a safe bet for Thailand's scale
-            map.flyTo([avgLat + 0.3, avgLng], Math.min(targetZoom, 10), {
-                duration: 1.5,
-                easeLinearity: 0.25
+            // Use Padding Top-Left to push map down from Header
+            // [Left Padding, Top Padding]
+            map.flyToBounds(group.getBounds(), {
+                paddingTopLeft: [20, 150],
+                paddingBottomRight: [20, 50],
+                maxZoom: 12,
+                duration: 1.5
             });
         }
     }, 400);

@@ -23,33 +23,49 @@ function initMap() {
     fitThailand();
 }
 
-// Fit map to Thailand bounds or markers with ultimate centering
+// Fit map to Thailand with Mathematical Centroid (True Balance)
 function fitThailand() {
-    if (!map) return;
+    if (!map || branches.length === 0) {
+        // Fallback to Golden Center
+        map.flyTo([13.2, 101.2], 5.8, { duration: 1.5 });
+        closePanel();
+        return;
+    }
     
     closePanel();
     
-    // Give enough time for the panel transition to finish and map to resize
     setTimeout(() => {
-        // Force Leaflet to recalculate container size
         map.invalidateSize();
         
-        if (markers.length > 0) {
+        // Math Power: Calculate the Average (Centroid) for Visual Balance
+        let latSum = 0, lngSum = 0, count = 0;
+        branches.forEach(b => {
+            const lat = parseFloat(b.latitude);
+            const lng = parseFloat(b.longitude);
+            if (lat > 5.5 && lat < 20.5 && lng > 97.0 && lng < 106.0) {
+                latSum += lat;
+                lngSum += lng;
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            const avgLat = latSum / count;
+            const avgLng = lngSum / count;
             const group = new L.featureGroup(markers);
-            map.flyToBounds(group.getBounds(), {
-                paddingTopLeft: [10, 80], // Space for Header
-                paddingBottomRight: [10, 10],
-                maxZoom: 12,
-                duration: 1.5
-            });
-        } else {
-            // Ultimate Thailand View: Balanced center for Axe-shape
-            const isMobile = window.innerWidth < 768;
-            map.flyTo([13.1, 101.5], isMobile ? 5.6 : 6, { 
-                duration: 1.5 
+            
+            // Calculate optimal zoom from bounds but use our Centroid as center
+            const bounds = group.getBounds();
+            const targetZoom = map.getBoundsZoom(bounds, false, [20, 100]);
+            
+            // Apply a slight downward offset to avgLat to compensate for header UI
+            // 0.5 degrees is a safe bet for Thailand's scale
+            map.flyTo([avgLat + 0.3, avgLng], Math.min(targetZoom, 10), {
+                duration: 1.5,
+                easeLinearity: 0.25
             });
         }
-    }, 400); // 400ms is safer for most device transitions
+    }, 400);
 }
 
 // Load Branches

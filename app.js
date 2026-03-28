@@ -173,112 +173,68 @@ function openBranchDetails(id) {
 }
 
 // UI Helpers
-function openPanel() {
-    document.getElementById('side-panel').classList.remove('collapsed');
-}
-
-function closePanel() {
-    document.getElementById('side-panel').classList.add('collapsed');
-}
-
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-// Events
-document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    loadBranches();
-
-    document.getElementById('locate-me-btn').onclick = locateUser;
-    
-    document.querySelector('.close-btn').onclick = () => {
-        document.getElementById('branch-modal').style.display = 'none';
-    };
-
-    window.onclick = (event) => {
-        const modal = document.getElementById('branch-modal');
-        if (event.target == modal) modal.style.display = 'none';
-    };
-
-    // Improved Bottom Sheet interactions (Pointer & Touch) - Real-time smooth drag
+    // Robust Bottom Sheet interactions
     const panel = document.getElementById('side-panel');
     const handle = document.querySelector('.panel-handle');
     let startY = 0;
     let isDragging = false;
-    let startTranslateY = 0;
+    let lastY = 0;
 
-    const onStart = (y) => {
-        startY = y;
+    function openPanel() {
+        panel.classList.remove('collapsed');
+        panel.style.transform = ''; 
+    }
+
+    function closePanel() {
+        panel.classList.add('collapsed');
+        panel.style.transform = '';
+    }
+
+    // Toggle on simple click
+    handle.onclick = (e) => {
+        if (Math.abs(lastY - startY) < 10) { // If it wasn't a significant drag
+            panel.classList.toggle('collapsed');
+        }
+    };
+
+    // Touch Drag logic
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        lastY = startY;
         isDragging = true;
         panel.style.transition = 'none';
-        
-        // Get current transform
-        const transform = window.getComputedStyle(panel).transform;
-        if (transform !== 'none') {
-            const matrix = new DOMMatrixReadOnly(transform);
-            startTranslateY = matrix.m42;
-        } else {
-            startTranslateY = 0;
-        }
-    };
+    }, { passive: true });
 
-    const onMove = (y) => {
+    document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
+        const y = e.touches[0].clientY;
+        lastY = y;
         const deltaY = y - startY;
-        let newTranslateY = startTranslateY + deltaY;
         
-        // Boundaries: Don't drag too high or too low
-        const minTranslateY = 0; // Fully expanded
-        const maxTranslateY = panel.offsetHeight - 70; // Collapsed
-        
-        if (newTranslateY < minTranslateY) newTranslateY = minTranslateY * 0.5; // Resistance
-        
-        panel.style.transform = `translateY(${newTranslateY}px)`;
-    };
+        // Visual feedback during drag
+        if (panel.classList.contains('collapsed')) {
+             if (deltaY < 0) panel.style.transform = `translateY(calc(100% - 70px + ${deltaY}px))`;
+        } else {
+             if (deltaY > 0) panel.style.transform = `translateY(${deltaY}px)`;
+        }
+    }, { passive: true });
 
-    const onEnd = (y) => {
+    document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
-        panel.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-        panel.style.transform = ''; // Let classes handle it
+        panel.style.transition = '';
         
-        const deltaY = y - startY;
-        
-        if (deltaY > 50) {
-            closePanel();
-        } else if (deltaY < -50) {
+        const totalDelta = lastY - startY;
+        if (totalDelta < -50) {
             openPanel();
+        } else if (totalDelta > 50) {
+            closePanel();
         } else {
-            // Threshold for toggle if it was a small movement
-            if (Math.abs(deltaY) < 10) {
-                panel.classList.toggle('collapsed');
-            } else {
-                // Return to original state if move was small
-                if (panel.classList.contains('collapsed')) closePanel(); else openPanel();
-            }
+            panel.style.transform = ''; // Reset to class-based position
         }
-    };
+    });
 
-    // Touch events
-    handle.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY), { passive: false });
-    document.addEventListener('touchmove', (e) => {
-        if (isDragging) {
-            onMove(e.touches[0].clientY);
-            e.preventDefault();
-        }
-    }, { passive: false });
-    document.addEventListener('touchend', (e) => onEnd(e.changedTouches[0].clientY));
-
-    // Mouse events
-    handle.addEventListener('mousedown', (e) => onStart(e.clientY));
-    document.addEventListener('mousemove', (e) => onMove(e.clientY));
-    document.addEventListener('mouseup', (e) => onEnd(e.clientY));
-
-    // Search input: Ensure panel DOES NOT open while typing unless user wants it
+    // Search and Locate must NOT call openPanel
     document.getElementById('branch-search').oninput = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = branches.filter(b => 
@@ -294,8 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
              const card = createBranchCard(b, false);
              listElement.appendChild(card);
         });
-        
-        // Removed openPanel() - User must explicitly open to see results
     };
 });
 

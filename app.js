@@ -64,10 +64,16 @@ function renderMarkers() {
 // Haversine Formula for distance
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const l1 = parseFloat(lat1), ln1 = parseFloat(lon1);
+    const l2 = parseFloat(lat2), ln2 = parseFloat(lon2);
+    
+    // Safety check for invalid coordinates
+    if (isNaN(l1) || isNaN(ln1) || isNaN(l2) || isNaN(ln2)) return Infinity;
+
+    const dLat = (l2 - l1) * Math.PI / 180;
+    const dLon = (ln2 - ln1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.cos(l1 * Math.PI / 180) * Math.cos(l2 * Math.PI / 180) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
@@ -81,6 +87,13 @@ function locateUser() {
     }
 
     showToast('กำลังระบุตำแหน่งของคุณ...');
+    
+    const geoOptions = {
+        enableHighAccuracy: true,
+        timeout: 15000,      // Timeout after 15 seconds
+        maximumAge: 0        // Force current location
+    };
+
     navigator.geolocation.getCurrentPosition(position => {
         userLocation = {
             lat: position.coords.latitude,
@@ -97,9 +110,14 @@ function locateUser() {
         showToast('พบสาขาใกล้คุณ 5 อันดับแรก');
         openPanel(); // Expand to show results (Map 25%, List 75%)
     }, error => {
-        showToast('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
-        document.getElementById('nearest-branches-list').innerHTML = `<div class="location-prompt" style="color:#ff6b6b; font-size: 0.9rem; text-align: center; padding: 1rem 0;">ไม่ได้รับอนุญาตให้ใช้พิกัดตำแหน่ง</div>`;
-    });
+        let errorMsg = 'ไม่สามารถระบุตำแหน่งได้';
+        if (error.code === 1) errorMsg = 'คุณปฏิเสธการให้ตำแหน่งพิกัด';
+        else if (error.code === 2) errorMsg = 'ไม่มีสัญญาณ GPS / เบราว์เซอร์บล็อกพิกัด';
+        else if (error.code === 3) errorMsg = 'หมดเวลารอพิกัด (Timeout)';
+
+        showToast(errorMsg);
+        document.getElementById('nearest-branches-list').innerHTML = `<div class="location-prompt" style="color:#ff6b6b; font-size: 0.9rem; text-align: center; padding: 1rem 0;">${errorMsg}</div>`;
+    }, geoOptions);
 }
 
 // Find and Display Nearest Branches

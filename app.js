@@ -36,11 +36,10 @@ function fitThailand() {
         
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
-            // Use Padding Top-Left to push map down from Header
-            // [Left Padding, Top Padding]
+            // Balanced Padding: 80px for Header, 20px for sides
             map.flyToBounds(group.getBounds(), {
-                paddingTopLeft: [20, 150],
-                paddingBottomRight: [20, 50],
+                paddingTopLeft: [20, 80],
+                paddingBottomRight: [20, 20],
                 maxZoom: 12,
                 duration: 1.5
             });

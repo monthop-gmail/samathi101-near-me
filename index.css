@@ -72,12 +72,13 @@ h1 {
 .search-bar {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem; /* Narrow gap for mobile */
     background: rgba(255, 255, 255, 0.05);
-    padding: 6px;
-    border-radius: 16px;
+    padding: 4px;
+    border-radius: 14px;
     border: 1px solid var(--glass-border);
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 .search-bar:focus-within {
@@ -88,10 +89,11 @@ h1 {
 
 #branch-search {
     flex: 1;
+    min-width: 0; /* Let input shrink on narrow screens like LINE browser */
     background: transparent;
     border: none;
     color: white;
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem;
     font-family: inherit;
     font-size: 1rem;
 }
@@ -108,10 +110,10 @@ h1 {
     background: var(--primary-gradient);
     border: none;
     color: white;
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    border-radius: 12px;
+    width: 38px; /* Slightly smaller for mobile compatibility */
+    height: 38px;
+    flex-shrink: 0; /* Never shrink buttons */
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;

@@ -50,11 +50,17 @@ function fitThailand() {
 // Load Branches
 async function loadBranches() {
     try {
-        const response = await fetch('branches.json');
+        // Add cachebuster to force fresh data download
+        const response = await fetch('branches.json?v=' + Date.now());
         const rawData = await response.json();
         
-        // Filter out branch 999 (out of bounds) and ensure coordinates exist
-        branches = rawData.filter(b => b.number !== 999 && b.latitude && b.longitude);
+        // Filter out branch 999 (demo) and ensure coordinates are valid and not 0,0
+        branches = rawData.filter(b => {
+            const num = parseInt(b.number);
+            const lat = parseFloat(b.latitude);
+            const lng = parseFloat(b.longitude);
+            return num !== 999 && lat && lng && lat !== 0 && lng !== 0;
+        });
         
         renderMarkers();
         renderAllBranchesList();

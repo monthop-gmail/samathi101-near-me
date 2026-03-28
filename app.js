@@ -23,31 +23,33 @@ function initMap() {
     fitThailand();
 }
 
-// Fit map to Thailand bounds or markers with better centering
+// Fit map to Thailand bounds or markers with ultimate centering
 function fitThailand() {
     if (!map) return;
     
     closePanel();
     
-    // Give a small delay for UI to settle
+    // Give enough time for the panel transition to finish and map to resize
     setTimeout(() => {
+        // Force Leaflet to recalculate container size
+        map.invalidateSize();
+        
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
             map.flyToBounds(group.getBounds(), {
-                paddingTopLeft: [20, 100], // Extra padding for Header & Side Balance
-                paddingBottomRight: [20, 20],
+                paddingTopLeft: [10, 80], // Space for Header
+                paddingBottomRight: [10, 10],
                 maxZoom: 12,
                 duration: 1.5
             });
         } else {
-            // Golden Thailand View: Perfectly centered for most screens
-            // Adjusted slightly to account for Thailand's "handled axe" shape
+            // Ultimate Thailand View: Balanced center for Axe-shape
             const isMobile = window.innerWidth < 768;
-            map.flyTo([13.5, 101.0], isMobile ? 5.5 : 6, { 
+            map.flyTo([13.1, 101.5], isMobile ? 5.6 : 6, { 
                 duration: 1.5 
             });
         }
-    }, 200);
+    }, 400); // 400ms is safer for most device transitions
 }
 
 // Load Branches

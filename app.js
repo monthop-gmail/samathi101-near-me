@@ -2,6 +2,8 @@ let map;
 let branches = [];
 let userLocation = null;
 let markers = [];
+let mapConfig = null;
+let adminMode = false;
 
 // Initialize Map
 function initMap() {
@@ -20,9 +22,90 @@ function initMap() {
     L.control.zoom({
         position: 'bottomright'
     }).addTo(map);
+
+    // Initial config load
+    loadConfig();
+    
+    // Check for Admin Mode
+    checkAdminMode();
 }
 
-// Fit map to Thailand correctly (Human-curated Cinematic View)
+// Load Configuration from config.json
+async function loadConfig() {
+    try {
+        const response = await fetch('config.json?v=' + Date.now());
+        const data = await response.json();
+        mapConfig = data;
+        console.log('Map configuration loaded:', mapConfig);
+    } catch (error) {
+        console.warn('Could not load config.json, using defaults.');
+    }
+}
+
+// Admin Mode Detection and UI
+function checkAdminMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === '1') {
+        adminMode = true;
+        console.log('--- ADMIN MODE ENABLED ---');
+        initAdminUI();
+    }
+}
+
+function initAdminUI() {
+    const adminDiv = document.createElement('div');
+    adminDiv.className = 'admin-controls glass';
+    adminDiv.innerHTML = `
+        <div class="admin-hud">
+            <div>Lat: <span id="hud-lat">0</span></div>
+            <div>Lng: <span id="hud-lng">0</span></div>
+            <div>Zoom: <span id="hud-zoom">0</span></div>
+        </div>
+        <button id="save-view-btn" class="action-btn-large">
+            <span>💾 Save Current View</span>
+        </button>
+    `;
+    document.body.appendChild(adminDiv);
+
+    // Update HUD on move
+    map.on('moveend', () => {
+        const center = map.getCenter();
+        document.getElementById('hud-lat').textContent = center.lat.toFixed(4);
+        document.getElementById('hud-lng').textContent = center.lng.toFixed(4);
+        document.getElementById('hud-zoom').textContent = map.getZoom().toFixed(1);
+    });
+
+    // Save button logic
+    document.getElementById('save-view-btn').onclick = () => {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        
+        const newConfig = {
+            thailandView: {
+                lat: parseFloat(center.lat.toFixed(4)),
+                lng: parseFloat(center.lng.toFixed(4)),
+                zoom: parseFloat(zoom.toFixed(1))
+            }
+        };
+
+        const jsonStr = JSON.stringify(newConfig, null, 2);
+        
+        // Output for manual commit as per plan
+        console.log('--- NEW CONFIG JSON ---');
+        console.log(jsonStr);
+        
+        const blob = new Blob([jsonStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'config.json';
+        a.click();
+        
+        alert('คัดลอก JSON ใน Console หรือใช้ไฟล์ที่ Download ไปทับของเดิมใน Repo นะครับ');
+    };
+}
+
+// Fit map to Thailand correctly (Prioritize Config > Math)
 function fitThailand() {
     if (!map) return;
     
@@ -31,12 +114,21 @@ function fitThailand() {
     setTimeout(() => {
         map.invalidateSize();
         
-        // Use a curated "Cinematic View" that humans prefer
-        // This coordinates are hand-picked for the best visual balance
+        // 1. Try to use manual config if loaded
+        if (mapConfig && mapConfig.thailandView) {
+            const { lat, lng, zoom } = mapConfig.thailandView;
+            map.flyTo([lat, lng], zoom, {
+                duration: 1.5,
+                easeLinearity: 0.25
+            });
+            return;
+        }
+
+        // 2. Fallback to curated "Cinematic View" logic
         const isMobile = window.innerWidth < 768;
         const targetLat = isMobile ? 13.5 : 13.2;
         const targetLng = 101.0;
-        const targetZoom = isMobile ? 5.7 : 6.2; // Fractional zoom thanks to zoomSnap
+        const targetZoom = isMobile ? 5.7 : 6.2;
 
         map.flyTo([targetLat, targetLng], targetZoom, {
             duration: 1.5,

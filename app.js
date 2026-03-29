@@ -144,16 +144,13 @@ async function loadBranches() {
         const response = await fetch('branches.json?v=' + Date.now());
         const rawData = await response.json();
         
-        // Filter out branch 999 (demo) and ensure coordinates are valid and within Thailand bounding box
+        // Keep all branches: showing raw data helps with data auditing (finding wrong coordinates)
         branches = rawData.filter(b => {
-            const num = parseInt(b.number);
             const lat = parseFloat(b.latitude);
             const lng = parseFloat(b.longitude);
             
-            // Basic Thailand Bounding Box (Lat: 5.5 to 20.5, Lng: 97.0 to 106.0)
-            const isInThailand = lat > 5.5 && lat < 20.5 && lng > 97.0 && lng < 106.0;
-            
-            return num !== 999 && isInThailand;
+            // Only skip if coordinates are truly missing/not numbers
+            return !isNaN(lat) && !isNaN(lng);
         });
         
         renderMarkers();

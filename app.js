@@ -314,7 +314,10 @@ function createBranchCard(branch, showDistance) {
     const card = document.createElement('div');
     card.className = 'branch-card';
     card.innerHTML = `
-        <div class="branch-name">สาขาที่ ${branch.number}: ${branch.name}</div>
+        <div class="branch-card-header">
+            <div class="branch-name">สาขาที่ ${branch.number}: ${branch.name}</div>
+            ${branch.group_id ? `<span class="group-badge">ก.${branch.group_id}</span>` : ''}
+        </div>
         <div class="branch-location">${branch.province ? branch.province.name_th : ''} ${branch.district ? branch.district.name_th : ''}</div>
         ${showDistance ? `<div class="branch-distance">ห่างจากคุณ ${branch.distance.toFixed(2)} กม.</div>` : ''}
     `;
@@ -343,6 +346,7 @@ function openBranchDetails(id) {
         <h2 style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${branch.name}</h2>
         <div style="margin-bottom: 1.5rem;">
             <p><strong>หมายเลขสาขา:</strong> ${branch.number}</p>
+            <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${branch.group_id || 'ไม่ระบุ'}</span></p>
             <p><strong>ผู้ดูแล:</strong> ${branch.owner || 'ไม่ระบุ'}</p>
             <p><strong>โทร:</strong> ${branch.owner_tel || 'ไม่ระบุ'}</p>
             <p><strong>เวลาทำการ:</strong> ${branch.opening_hours || 'ไม่ระบุ'}</p>
@@ -409,12 +413,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Search input: Filter list without auto-expanding
     document.getElementById('branch-search').oninput = (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = branches.filter(b => 
-            b.name.toLowerCase().includes(query) || 
-            (b.province && b.province.name_th.toLowerCase().includes(query)) ||
-            (b.province && b.province.name_en.toLowerCase().includes(query)) ||
-            (b.number && b.number.toString().includes(query))
-        );
+        
+        // Smart Group Query: Extract number if query starts with "ก." or "กลุ่ม"
+        const cleanQuery = query.replace('ก.', '').replace('กลุ่ม', '').trim();
+        const isNumeric = /^\d+$/.test(cleanQuery);
+
+        const filtered = branches.filter(b => {
+             const nameMatch = b.name.toLowerCase().includes(query);
+             const provinceMatch = b.province && b.province.name_th.toLowerCase().includes(query);
+             const provinceEnMatch = b.province && b.province.name_en.toLowerCase().includes(query);
+             const numberMatch = b.number && b.number.toString().includes(query);
+             
+             // Group Match
+             let groupMatch = false;
+             if (b.group_id) {
+                 const gid = b.group_id.toString();
+                 // Direct match with number (e.g., "10") or smart match (e.g., "ก.10")
+                 groupMatch = gid.includes(query) || (isNumeric && gid === cleanQuery);
+             }
+
+             return nameMatch || provinceMatch || provinceEnMatch || numberMatch || groupMatch;
+        });
         
         const listElement = document.getElementById('all-branches-list');
         listElement.innerHTML = '';

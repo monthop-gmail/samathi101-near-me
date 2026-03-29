@@ -218,15 +218,36 @@ h2 {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.branch-card:active {
-    transform: scale(0.98);
+.branch-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 0.4rem;
 }
 
 .branch-name {
     font-weight: 600;
     font-size: 1.15rem;
-    margin-bottom: 0.4rem;
     color: var(--text-main);
+    flex: 1;
+}
+
+.group-badge {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.group-text {
+    color: #f59e0b;
+    font-weight: 600;
 }
 
 .branch-location {

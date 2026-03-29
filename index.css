@@ -250,6 +250,17 @@ h2 {
     font-weight: 600;
 }
 
+.phone-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.phone-link:hover {
+    color: #8b5cf6;
+}
+
 .branch-location {
     font-size: 0.95rem;
     color: var(--text-dim);

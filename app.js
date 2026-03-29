@@ -345,10 +345,10 @@ function openBranchDetails(id) {
             <p><strong>หมายเลขสาขา:</strong> ${branch.number}</p>
             <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${branch.group_id || 'ไม่ระบุ'}</span></p>
             <p><strong>ผู้ดูแล:</strong> ${branch.owner || 'ไม่ระบุ'}</p>
-            <p><strong>โทร:</strong> ${branch.owner_tel || 'ไม่ระบุ'}</p>
+            <p><strong>โทร:</strong> ${branch.owner_tel ? `<a href="tel:${branch.owner_tel.replace(/\s+/g, '')}" class="phone-link">${branch.owner_tel}</a>` : 'ไม่ระบุ'}</p>
             <p><strong>เวลาทำการ:</strong> ${branch.opening_hours || 'ไม่ระบุ'}</p>
             <p><strong>จังหวัด:</strong> ${branch.province ? branch.province.name_th : 'ไม่ระบุ'}</p>
-            <p><strong>ภาค:</strong> ${branch.province ? branch.province.region_name_6_th : 'ไม่ระบุ'}</p>
+            <p><strong>ภาค:</strong> ${branch.custom_region || 'ไม่ระบุ'}</p>
         </div>
         <a href="https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}" target="_blank" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">นำทางด้วย Google Maps</a>
     `;

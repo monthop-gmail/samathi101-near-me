@@ -58,8 +58,10 @@ function createApp({ url = 'http://localhost/', withCluster = true } = {}) {
         latLng,
         latLngBounds: coords => ({ coords }),
         layerGroup: makeGroup,
-        marker() {
+        marker(latlng, options) {
             const el = window.document.createElement('div');
+            // Leaflet จริงจะเอา className ของ divIcon มาใส่ที่ element ของหมุด
+            el.className = (options && options.icon && options.icon.className) || '';
             const m = {
                 addTo(target) { if (target === mapStub) state.mapLayers.add(m); return m; },
                 bindPopup() { return m; },
@@ -105,6 +107,23 @@ function createApp({ url = 'http://localhost/', withCluster = true } = {}) {
     if (window.document.readyState !== 'loading') {
         window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
     }
+
+    // คำนวณจำนวนที่คาดหวังจากข้อมูลจริง เพื่อไม่ต้องแก้เทสทุกครั้งที่ข้อมูลสาขาเปลี่ยน
+    const data = JSON.parse(branchesJson);
+    const usable = b => {
+        const lat = parseFloat(b.latitude);
+        const lng = parseFloat(b.longitude);
+        return isFinite(lat) && isFinite(lng) && (Math.abs(lat) > 0.5 || Math.abs(lng) > 0.5);
+    };
+    const visible = data.filter(b => b.number !== 999);
+    state.expected = {
+        total: visible.length,
+        mapped: visible.filter(usable).length,
+        pending: visible.filter(b => !usable(b)).length,
+        needsReview: visible.filter(b => b.coords_needs_review).length,
+        // ชื่อสาขาที่ยังไม่มีพิกัด ใช้ทดสอบการ์ดในหมวด "รอปรับพิกัด"
+        pendingSample: visible.filter(b => !usable(b))[0],
+    };
 
     state.ev = expr => window.__peek(expr);
     state.$ = s => window.document.querySelector(s);

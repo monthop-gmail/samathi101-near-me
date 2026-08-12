@@ -233,7 +233,7 @@ function renderMarkers() {
         // ไม่ใส่ .pulse ในทุกหมุดแล้ว เพราะ animation แบบ infinite เกือบ 300 ตัว
         // พร้อมกันกิน CPU/แบตหนักมากบนมือถือ — ให้เต้นเฉพาะหมุดที่ถูกเลือก
         const customIcon = L.divIcon({
-            className: 'custom-marker-wrapper',
+            className: 'custom-marker-wrapper' + (branch.coords_needs_review ? ' unverified' : ''),
             html: '<div class="custom-pin"></div>',
             iconSize: [24, 24],
             iconAnchor: [12, 24],
@@ -559,6 +559,7 @@ function createBranchCard(branch, showDistance) {
             ${branch.group_id ? `<span class="group-badge">ก.${esc(branch.group_id)}</span>` : ''}
         </div>
         <div class="branch-location">${esc(branch.province && branch.province.name_th)} ${esc(branch.district && branch.district.name_th)}</div>
+        ${branch.coords_needs_review ? '<div class="coords-review-tag">พิกัดรอสาขายืนยัน</div>' : ''}
         ${showDistance ? `<div class="branch-distance">ห่างจากคุณ ${branch.distance.toFixed(2)} กม.</div>` : ''}
     `;
     card.onclick = () => {
@@ -597,6 +598,15 @@ function openBranchDetails(id) {
         ? `<div class="branch-photo-wrap"><img class="branch-photo" src="${esc(branch.img)}" alt="รูปสาขา ${esc(branch.name)}" loading="lazy" decoding="async" onerror="this.closest('.branch-photo-wrap').remove()"></div>`
         : '';
 
+    // พิกัดที่ทีมงานเติมให้เอง ต้องบอกผู้ใช้ตรงๆ ว่ายังไม่ได้รับการยืนยันจากสาขา
+    const coordsNotice = branch.coords_needs_review
+        ? `<div class="coords-warning">
+               <strong>พิกัดนี้ทีมงานเติมให้ ยังรอสาขายืนยัน</strong><br>
+               ค้นจาก OpenStreetMap อาจคลาดเคลื่อนได้ กรุณาโทรสอบถามสาขาก่อนเดินทาง
+               ${branch.coords_note ? `<br><span class="coords-note">${esc(branch.coords_note)}</span>` : ''}
+           </div>`
+        : '';
+
     const detailHtml = `
         ${photo}
         <h2 id="branch-detail-title" style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${esc(branch.name)}</h2>
@@ -609,6 +619,7 @@ function openBranchDetails(id) {
             <p><strong>จังหวัด:</strong> ${esc(branch.province && branch.province.name_th) || 'ไม่ระบุ'}</p>
             <p><strong>ภาค:</strong> ${esc(branch.custom_region) || 'ไม่ระบุ'}</p>
         </div>
+        ${coordsNotice}
         ${mapsAction}
         <button type="button" class="share-btn" id="share-branch-btn">🔗 คัดลอกลิงก์สาขานี้</button>
     `;

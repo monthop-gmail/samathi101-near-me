@@ -354,6 +354,25 @@ h2 {
     opacity: 0.8;
 }
 
+/* หมุดที่พิกัดยังรอสาขายืนยัน ใช้สีทองให้ต่างจากหมุดปกติ */
+.custom-marker-wrapper.unverified .custom-pin {
+    background: linear-gradient(135deg, #d9a441 0%, #b8860b 100%);
+    border-style: dashed;
+}
+
+.coords-review-tag {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: #d9a441;
+    opacity: 0.9;
+}
+
+.coords-note {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+
 .coords-warning {
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);

@@ -3,12 +3,12 @@ const { createApp, createChecker, sleep } = require('./helpers');
 
 const app = createApp({ url: 'http://localhost/?branch=35', withCluster: false });
 const { check, counts } = createChecker();
-const { ev, $, $$, window } = app;
+const { ev, $, $$, window, expected } = app;
 
 setTimeout(async () => {
   console.log('\n[1] fallback เมื่อโหลด leaflet.markercluster ไม่ได้');
   check('ใช้ LayerGroup ธรรมดาแทน ไม่ error', app.errors.length, 0);
-  check('หมุดยังขึ้นครบ 295', app.groupLayers.size, 295);
+  check(`หมุดยังขึ้นครบ ${expected.mapped}`, app.groupLayers.size, expected.mapped);
   $('#branch-search').value = 'ก.10';
   $('#branch-search').oninput({ target: $('#branch-search') });
   await sleep(400);

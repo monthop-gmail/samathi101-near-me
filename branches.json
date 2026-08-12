@@ -6903,8 +6903,8 @@
     "name": "กลุ่มบริษัท ปตท. จตุจักร กรุงเทพมหานคร",
     "number": 134,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "13.8188210",
+    "longitude": "100.5583280",
     "img": "images/demo/demo-branch.jpg",
     "owner": "คุณนพดล สินธุสะ",
     "owner_tel": "0814828128",
@@ -6949,7 +6949,10 @@
       }
     ],
     "group_id": 2,
-    "custom_region": "กรุงเทพฯ และปริมณฑล"
+    "custom_region": "กรุงเทพฯ และปริมณฑล",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "OSM ไม่มีหมุดของตัวอาคาร ใช้จุดป้ายรถเมล์ 'ปตท. สำนักงานใหญ่' หน้าอาคารแทน คลาดเคลื่อนราว 200-300 ม."
   },
   {
     "id": 784,
@@ -8918,8 +8921,8 @@
     "name": "ม.เทคโนโลยีราชมงคลพระนคร กรุงเทพมหานคร",
     "number": 176,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "13.7707430",
+    "longitude": "100.5038010",
     "img": "images/demo/demo-branch.jpg",
     "owner": null,
     "owner_tel": null,
@@ -8932,7 +8935,10 @@
     "province": null,
     "user_branches": [],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "มีหลายศูนย์ในกรุงเทพฯ เลือกศูนย์เทเวศร์ซึ่งเป็นที่ตั้งสำนักงานอธิการบดี — สาขาโปรดยืนยันว่าใช้ศูนย์ไหน"
   },
   {
     "id": 826,
@@ -9840,8 +9846,8 @@
     "name": "วัดป่าวิศรุตรัตนาราม เขตหนองจอก กรุงเทพมหานคร",
     "number": 195,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "13.9254923",
+    "longitude": "100.9011650",
     "img": "https://media.samathi101.com/public/img/branch/1l8l8qikm.webp",
     "owner": "โทร 083-599-5365 : อ.สิทธิพันธุ์  หลักแหลม   ",
     "owner_tel": "โทร 081-914-6326 : อ.ศรีพัจฌาย์  หันไชยเนาว์  ",
@@ -9886,7 +9892,10 @@
       }
     ],
     "group_id": 1,
-    "custom_region": "กรุงเทพฯ และปริมณฑล"
+    "custom_region": "กรุงเทพฯ และปริมณฑล",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 845,
@@ -11357,8 +11366,8 @@
     "name": "วัดเสนาราม อ.ท่าศาลา จ.นครศรีธรรมราช",
     "number": 224,
     "status": 1,
-    "latitude": "0",
-    "longitude": "0",
+    "latitude": "8.6678528",
+    "longitude": "99.9281871",
     "img": "https://media.samathi101.com/public/img/branch/1l90zxdp8.webp",
     "owner": "1.อ.วรพจน์ หนูช่วย 2.อ.วิสูจน์ ตันสกุล 3.อ.แสงตะวัน งามกาหลง",
     "owner_tel": "1.   2. 0980139650 3.0634978298",
@@ -11403,7 +11412,10 @@
       }
     ],
     "group_id": 29,
-    "custom_region": "ภาคใต้"
+    "custom_region": "ภาคใต้",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 874,
@@ -12267,8 +12279,8 @@
     "name": "วัดพระยืน อ.เมือง จ.ลำพูน",
     "number": 242,
     "status": 1,
-    "latitude": "0",
-    "longitude": "0",
+    "latitude": "18.5761684",
+    "longitude": "99.0200098",
     "img": "https://media.samathi101.com/public/img/branch/1llox8u6y.webp",
     "owner": "อาจารย์สุพันธ์  ศรีชูกุล",
     "owner_tel": "089-700-6103",
@@ -12313,7 +12325,10 @@
       }
     ],
     "group_id": 24,
-    "custom_region": "ภาคเหนือ"
+    "custom_region": "ภาคเหนือ",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 892,
@@ -13728,8 +13743,8 @@
     "name": "วิทยาลัยเทคโนโลยีบริหารธุรกิจรักไทย อ.พุทไธสง จ.บุรีรัมย์",
     "number": 272,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "15.5613610",
+    "longitude": "102.9768380",
     "img": "images/demo/demo-branch.jpg",
     "owner": null,
     "owner_tel": null,
@@ -13754,7 +13769,10 @@
       }
     ],
     "group_id": 16,
-    "custom_region": "ภาคตะวันออกเฉียงเหนือ"
+    "custom_region": "ภาคตะวันออกเฉียงเหนือ",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 922,
@@ -14556,8 +14574,8 @@
     "name": "วัดบุญวาทย์วิหาร ต.หัวเวียง อ.เมืองลำปาง จ.ลำปาง",
     "number": 288,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "18.2902969",
+    "longitude": "99.5018697",
     "img": "images/demo/demo-branch.jpg",
     "owner": "อ.วรญา วิไลรัตน์",
     "owner_tel": "0819616072",
@@ -14602,7 +14620,10 @@
       }
     ],
     "group_id": 24,
-    "custom_region": "ภาคเหนือ"
+    "custom_region": "ภาคเหนือ",
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 937,
@@ -15882,8 +15903,8 @@
     "name": "มหาวิทยาลัยสงขลานครินทร์",
     "number": 501,
     "status": 1,
-    "latitude": "0",
-    "longitude": "0",
+    "latitude": "7.0069589",
+    "longitude": "100.5007596",
     "img": "images/demo/demo-branch.jpg",
     "owner": "ผู้ช่วยศาสตราจารย์ ศิริมาศ ภูมิไชยา",
     "owner_tel": "089-6584793",
@@ -15928,7 +15949,10 @@
       }
     ],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ม.อ. มีหลายวิทยาเขต เลือกหาดใหญ่ตามข้อมูลอำเภอ/ตำบลในระบบ (คอหงส์ หาดใหญ่)"
   },
   {
     "id": 957,
@@ -16200,8 +16224,8 @@
     "name": "มหาวิทยาลัยมหาสารคาม",
     "number": 508,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "16.2470296",
+    "longitude": "103.2505615",
     "img": "images/demo/demo-branch.jpg",
     "owner": "",
     "owner_tel": "",
@@ -16226,15 +16250,18 @@
       }
     ],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "มมส. มี 2 เขตพื้นที่ (ขามเรียง / ในเมือง) เลือกขามเรียงซึ่งเป็นเขตหลัก — สาขาโปรดยืนยัน"
   },
   {
     "id": 972,
     "name": "มหาวิทยาลัยราชภัฏเชียงราย",
     "number": 509,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "19.9846947",
+    "longitude": "99.8488944",
     "img": "images/demo/demo-branch.jpg",
     "owner": "รศ.ดร.เกศกนก ชุ่มประดิษฐ์",
     "owner_tel": "0818858595",
@@ -16267,7 +16294,10 @@
     },
     "user_branches": [],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 967,
@@ -16327,8 +16357,8 @@
     "name": "มหาวิทยาราชภัฏพระนคร",
     "number": 511,
     "status": 1,
-    "latitude": "0",
-    "longitude": "0",
+    "latitude": "13.8764740",
+    "longitude": "100.5898560",
     "img": "https://media.samathi101.com/public/img/branch/dlwq1t9th.webp",
     "owner": "ผศ.ดร.ประยูร ป้อมสุวรรณ์",
     "owner_tel": "0819226181",
@@ -16373,15 +16403,18 @@
       }
     ],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ตรงกับแขวงอนุสาวรีย์ เขตบางเขน ตามข้อมูลในระบบ"
   },
   {
     "id": 969,
     "name": "มหาวิทยาลัยราชภัฏราชนครินทร์",
     "number": 512,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "13.6774121",
+    "longitude": "101.0703975",
     "img": "images/demo/demo-branch.jpg",
     "owner": "",
     "owner_tel": "",
@@ -16394,15 +16427,18 @@
     "province": null,
     "user_branches": [],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "มี 2 วิทยาเขต (เมืองฉะเชิงเทรา / บางคล้า) เลือกวิทยาเขตเมือง — สาขาโปรดยืนยัน"
   },
   {
     "id": 970,
     "name": "มหาวิทยาลัยราชภัฏสุรินทร์",
     "number": 516,
     "status": 1,
-    "latitude": "0",
-    "longitude": "0",
+    "latitude": "14.8589230",
+    "longitude": "103.4856906",
     "img": "images/demo/demo-branch.jpg",
     "owner": "ดร.สุขใจ  สมพงษ์พันธุ์",
     "owner_tel": "0918326565",
@@ -16447,7 +16483,10 @@
       }
     ],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 971,
@@ -16507,8 +16546,8 @@
     "name": "มหาวิทยาลัยราชภัฏสวนสุนันทา",
     "number": 518,
     "status": 1,
-    "latitude": "00.00000",
-    "longitude": "00.00000",
+    "latitude": "13.7754260",
+    "longitude": "100.5082666",
     "img": "images/demo/demo-branch.jpg",
     "owner": "",
     "owner_tel": "",
@@ -16521,7 +16560,10 @@
     "province": null,
     "user_branches": [],
     "group_id": null,
-    "custom_region": null
+    "custom_region": null,
+    "coords_source": "openstreetmap",
+    "coords_needs_review": true,
+    "coords_note": "ค้นจาก OpenStreetMap และตรวจแล้วว่าตรงจังหวัด/อำเภอตามข้อมูลในระบบ"
   },
   {
     "id": 977,

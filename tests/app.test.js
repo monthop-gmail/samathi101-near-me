@@ -2,39 +2,40 @@ const { createApp, createChecker, sleep } = require('./helpers');
 
 const app = createApp();
 const { check, counts } = createChecker();
-const { ev, $, $$, type } = app;
+const { ev, $, $$, type, expected } = app;
+const PENDING_NAME = expected.pendingSample.name;
 
 setTimeout(async () => {
   console.log('\n[1] แยกสาขาที่ไม่มีพิกัดออกจากแผนที่');
-  check('แสดงทั้งหมด 324 สาขา (ซ่อนสาขาสาธิต 999)', ev('allBranches.length'), 324);
+  check(`แสดงทั้งหมด ${expected.total} สาขา (ซ่อนสาขาสาธิต 999)`, ev('allBranches.length'), expected.total);
   check('ซ่อนสาขาสาธิตแล้ว', ev('allBranches.some(b => b.number === 999)'), false);
-  check('ปักหมุด 295 สาขา', ev('branches.length'), 295);
-  check('หมุดบนแผนที่ 295 อัน', app.groupLayers.size, 295);
-  check('รอปรับพิกัด 29 สาขา', ev('branchesNoCoords.length'), 29);
+  check(`ปักหมุด ${expected.mapped} สาขา`, ev('branches.length'), expected.mapped);
+  check(`หมุดบนแผนที่ ${expected.mapped} อัน`, app.groupLayers.size, expected.mapped);
+  check(`รอปรับพิกัด ${expected.pending} สาขา`, ev('branchesNoCoords.length'), expected.pending);
   check('ไม่มีหมุดที่พิกัด 0,0', ev('branches.filter(b => Math.abs(+b.latitude) < 0.5).length'), 0);
 
   console.log('\n[2] ลิสต์และ section รอปรับพิกัด');
-  check('การ์ดในลิสต์หลัก', $$('#all-branches-list .branch-card').length, 295);
-  check('การ์ดในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, 29);
+  check('การ์ดในลิสต์หลัก', $$('#all-branches-list .branch-card').length, expected.mapped);
+  check('การ์ดในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, expected.pending);
   check('section รอปรับพิกัดแสดงอยู่', $('#pending-coords-section').hidden, false);
-  check('badge นับจำนวนถูกต้อง', $('#pending-count').textContent, '29');
-  check('การ์ดรอปรับพิกัดมี class no-coords', $$('#pending-branches-list .branch-card.no-coords').length, 29);
+  check('badge นับจำนวนถูกต้อง', $('#pending-count').textContent, String(expected.pending));
+  check('การ์ดรอปรับพิกัดมี class no-coords', $$('#pending-branches-list .branch-card.no-coords').length, expected.pending);
 
   console.log('\n[3] ค้นหา');
   type('ก.10');
   check('ค้น "ก.10" เจอ 10 สาขา', $$('#all-branches-list .branch-card').length
     + $$('#pending-branches-list .branch-card').length, 10);
-  type('วัดพระยืน');
+  type(PENDING_NAME);
   check('สาขาไม่มีพิกัด ไม่โผล่ในลิสต์หลัก', $$('#all-branches-list .branch-card').length, 0);
   check('สาขาไม่มีพิกัด โผล่ในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, 1);
   type('0');
   check('ค้นเลข "0" เจอสำนักงานใหญ่ (บั๊ก falsy เดิม)',
     $$('#all-branches-list .branch-name').some(e => e.textContent.includes('สาขาที่ 0:')), true);
   type('');
-  check('ล้างช่องค้นหาแล้วกลับมาครบ', $$('#all-branches-list .branch-card').length, 295);
+  check('ล้างช่องค้นหาแล้วกลับมาครบ', $$('#all-branches-list .branch-card').length, expected.mapped);
 
   console.log('\n[4] กดการ์ดสาขาที่ไม่มีพิกัด');
-  type('วัดพระยืน');
+  type(PENDING_NAME);
   const before = app.flyToCalls;
   $('#pending-branches-list .branch-card').click();
   check('แผนที่ไม่บินไปพิกัด 0,0', app.flyToCalls, before);
@@ -78,7 +79,7 @@ setTimeout(async () => {
   console.log('\n[8] หมุดบนแผนที่ตามผลค้นหา (debounce 250ms)');
   type('ก.10');
   check('ลิสต์อัปเดตทันที ไม่ต้องรอ debounce', $$('#all-branches-list .branch-card').length, 10);
-  check('หมุดยังไม่เปลี่ยนก่อนครบเวลา debounce', app.groupLayers.size, 295);
+  check('หมุดยังไม่เปลี่ยนก่อนครบเวลา debounce', app.groupLayers.size, expected.mapped);
   await sleep(400);
   check('หลัง debounce เหลือเฉพาะหมุดที่ค้นเจอ', app.groupLayers.size, 10);
   const flyBefore = app.flyToCalls;
@@ -88,7 +89,7 @@ setTimeout(async () => {
   check('เหลือหมุดเดียว', app.groupLayers.size, 1);
   type('');
   await sleep(400);
-  check('ล้างคำค้นแล้วหมุดกลับมาครบ', app.groupLayers.size, 295);
+  check('ล้างคำค้นแล้วหมุดกลับมาครบ', app.groupLayers.size, expected.mapped);
 
   console.log('\n[9] escape HTML กัน XSS');
   const EVIL_NAME = '<img src=x onerror=alert(1)>';
@@ -133,7 +134,7 @@ setTimeout(async () => {
   type('');
 
   $$('#filter-chips .chip').find(c => c.textContent.includes('ภาคตะวันออกเฉียงเหนือ')).click();
-  check('กดชิปเดิมซ้ำ = ยกเลิกการกรอง', $$('#all-branches-list .branch-card').length, 295);
+  check('กดชิปเดิมซ้ำ = ยกเลิกการกรอง', $$('#all-branches-list .branch-card').length, expected.mapped);
 
   console.log('\n[11] ชิปกลุ่ม + สลับโหมด');
   const groupIds = ev('[...new Set(allBranches.map(b => b.group_id).filter(g => g && g !== 999))]');
@@ -162,7 +163,7 @@ setTimeout(async () => {
   $('#chip-mode-region').click();
   check('กลับมาโหมดภาค', $('#chip-mode-region').classList.contains('active'), true);
   check('ตัวกรองกลุ่มถูกล้าง', ev('activeGroup'), null);
-  check('กลับมาแสดงครบทุกสาขา', $$('#all-branches-list .branch-card').length, 295);
+  check('กลับมาแสดงครบทุกสาขา', $$('#all-branches-list .branch-card').length, expected.mapped);
   $$('#filter-chips .chip').find(c => c.textContent.includes('ภาคเหนือ')).click();
   $('#chip-mode-group').click();
   check('สลับกลับไปโหมดกลุ่ม ตัวกรองภาคถูกล้าง', ev('activeRegion'), null);
@@ -172,7 +173,7 @@ setTimeout(async () => {
   await sleep(400);
 
   console.log('\n[13] หมุดที่เลือกเท่านั้นที่เต้น');
-  check('ไม่มี .pulse ฝังในทุกหมุดแล้ว', ev(`markerById.size`), 295);
+  check('ไม่มี .pulse ฝังในทุกหมุดแล้ว', ev(`markerById.size`), expected.mapped);
   $('#all-branches-list .branch-card').click();
   const selected = ev('selectedMarkerId');
   check('มีหมุดที่ถูกเลือก', selected !== null, true);
@@ -181,6 +182,29 @@ setTimeout(async () => {
   $$('#all-branches-list .branch-card')[5].click();
   check('เปลี่ยนสาขาแล้วหมุดเก่าเลิกเต้น',
     ev(`[...markerById.values()].filter(m => m.getElement().classList.contains("is-selected")).length`), 1);
+
+  console.log('\n[14] พิกัดที่ทีมงานเติมให้ ต้องบอกผู้ใช้ว่ารอสาขายืนยัน');
+  check(`มี ${expected.needsReview} สาขาที่พิกัดรอยืนยัน`,
+    ev('allBranches.filter(b => b.coords_needs_review).length'), expected.needsReview);
+  check('สาขากลุ่มนี้ขึ้นแผนที่แล้ว (ไม่อยู่ในหมวดรอปรับพิกัด)',
+    ev('branchesNoCoords.filter(b => b.coords_needs_review).length'), 0);
+  check('การ์ดมีป้ายบอกสถานะ',
+    $$('#all-branches-list .coords-review-tag').length, expected.needsReview);
+  check('หมุดใช้สไตล์ต่างจากหมุดปกติ',
+    ev(`[...markerById.entries()].filter(([id, m]) =>
+        allBranches.find(b => b.id === id).coords_needs_review
+        && m.getElement().className.includes('unverified')).length`), expected.needsReview);
+
+  const review = ev(`allBranches.find(b => b.coords_needs_review)`);
+  ev(`openBranchDetails(allBranches.find(b => b.coords_needs_review).id)`);
+  check('หน้ารายละเอียดเตือนว่ารอยืนยัน', !!$('.coords-warning'), true);
+  check('เตือนด้วยข้อความที่ถูกต้อง',
+    $('.coords-warning strong').textContent.includes('รอสาขายืนยัน'), true);
+  check('ยังนำทางได้ตามปกติ',
+    $('#branch-detail a.popup-btn').textContent.trim(), 'นำทางด้วย Google Maps');
+  if (review.coords_note) {
+    check('แสดงหมายเหตุรายสาขา', $('.coords-note').textContent, review.coords_note);
+  }
 
   console.log(`\nJS errors: ${app.errors.length ? app.errors.join('; ') : 'ไม่มี'}`);
   console.log(`\nผลรวม: ผ่าน ${counts.pass} / ไม่ผ่าน ${counts.fail}`);

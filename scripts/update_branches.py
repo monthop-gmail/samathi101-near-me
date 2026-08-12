@@ -12,6 +12,7 @@ ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 BRANCHES_JSON = os.path.join(ROOT_DIR, 'branches.json')
 EXCEL_LOOKUP = os.path.join(ROOT_DIR, 'data', 'LookupBranch_H2_2568_20251121.xlsx')
 EXCEL_KSP = os.path.join(ROOT_DIR, 'data', 'KSP_Branch.xlsx')
+MANUAL_COORDS = os.path.join(ROOT_DIR, 'data', 'manual_coordinates.json')
 OUTPUT_JSON = os.path.join(ROOT_DIR, 'branches.json')
 
 def normalize_branch_number(val):
@@ -26,6 +27,55 @@ def normalize_branch_number(val):
     except Exception:
         pass
     return None
+
+def has_usable_coords(branch):
+    """พิกัด 0,0 ในระบบหลักหมายถึง 'ยังไม่ได้กรอก' ไม่ใช่พิกัดจริง"""
+    try:
+        lat = float(branch.get('latitude'))
+        lng = float(branch.get('longitude'))
+    except (TypeError, ValueError):
+        return False
+    return abs(lat) > 0.5 or abs(lng) > 0.5
+
+
+def apply_manual_coordinates(branches):
+    """
+    เติมพิกัดที่ทีมงานหามาเองให้สาขาที่ระบบหลักยังไม่มีข้อมูล
+    ทำหลังดึงข้อมูลใหม่ทุกครั้ง ไม่งั้นพิกัดจะหายไปพร้อมกับ group_id
+    ถ้าระบบหลักเริ่มมีพิกัดจริงแล้ว จะใช้ของระบบหลักเป็นหลักเสมอ
+    """
+    if not os.path.exists(MANUAL_COORDS):
+        print("ไม่พบ data/manual_coordinates.json ข้ามขั้นตอนเติมพิกัด")
+        return
+
+    with open(MANUAL_COORDS, 'r', encoding='utf-8') as f:
+        manual = json.load(f).get('branches', {})
+
+    applied = 0
+    superseded = []
+
+    for branch in branches:
+        entry = manual.get(str(branch.get('number')))
+        if not entry:
+            continue
+
+        if has_usable_coords(branch):
+            # ระบบหลักมีพิกัดจริงแล้ว ให้ลบรายการนี้ออกจากไฟล์ manual ได้
+            superseded.append(branch['number'])
+            continue
+
+        branch['latitude'] = entry['latitude']
+        branch['longitude'] = entry['longitude']
+        branch['coords_source'] = entry.get('source', 'manual')
+        branch['coords_needs_review'] = bool(entry.get('needs_review', True))
+        branch['coords_note'] = entry.get('note', '')
+        applied += 1
+
+    print(f"Applied manual coordinates to {applied} branches.")
+    if superseded:
+        print("ระบบหลักมีพิกัดของสาขาเหล่านี้แล้ว ลบออกจาก manual_coordinates.json ได้: "
+              + ', '.join(str(n) for n in superseded))
+
 
 def main():
     print("Loading existing branches.json...")
@@ -76,10 +126,12 @@ def main():
             branch['group_id'] = None
             branch['custom_region'] = None
 
+    print(f"Enriched {enriched_count} branches with group and region data.")
+
+    apply_manual_coordinates(branches)
+
     # Sort branches by number for consistency
     branches.sort(key=lambda x: x.get('number', 999))
-
-    print(f"Enriched {enriched_count} branches with group and region data.")
     
     # Save output
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:

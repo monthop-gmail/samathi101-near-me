@@ -131,6 +131,69 @@ h1 {
     transform: translateY(0) scale(0.95);
 }
 
+.action-btn:focus-visible,
+.chip:focus-visible,
+.close-btn:focus-visible,
+.branch-card:focus-visible {
+    outline: 2px solid #a5b4fc;
+    outline-offset: 2px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ชิปกรองตามภาค */
+.filter-chips {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: -0.25rem 0;
+    padding-bottom: 2px;
+}
+
+.filter-chips::-webkit-scrollbar {
+    display: none;
+}
+
+.chip {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.chip:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-main);
+}
+
+.chip.active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+
+.chip-count {
+    opacity: 0.65;
+    font-size: 0.75rem;
+    margin-left: 2px;
+}
+
 main {
     flex: 1;
     position: relative;
@@ -359,14 +422,56 @@ h2 {
     transform: rotate(45deg);
 }
 
-.pulse {
+/* เต้นเฉพาะหมุดที่ถูกเลือก ไม่ใช่ทุกหมุดพร้อมกันเหมือนเดิม */
+.custom-marker-wrapper.is-selected::before {
+    content: '';
     position: absolute;
+    top: 0;
+    left: 0;
     width: 24px;
     height: 24px;
     background: rgba(99, 102, 241, 0.4);
     border-radius: 50%;
     animation: pulse-animation 2s infinite;
     z-index: -1;
+}
+
+.custom-marker-wrapper.is-selected .custom-pin {
+    border-color: #f59e0b;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .custom-marker-wrapper.is-selected::before {
+        animation: none;
+    }
+}
+
+/* Marker cluster (ปลั๊กอิน leaflet.markercluster) */
+.marker-cluster {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 50%;
+    text-align: center;
+    color: #fff;
+    font-family: inherit;
+}
+
+.marker-cluster div {
+    width: 34px;
+    height: 34px;
+    margin: 3px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marker-cluster span {
+    font-size: 0.8rem;
+    font-weight: 700;
 }
 
 @keyframes pulse-animation {
@@ -416,8 +521,48 @@ h2 {
     top: 1.25rem;
     right: 1.5rem;
     font-size: 1.5rem;
+    line-height: 1;
     cursor: pointer;
     color: var(--text-dim);
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-family: inherit;
+}
+
+/* รูปสาขาในหน้ารายละเอียด */
+.branch-photo-wrap {
+    margin: -0.5rem -0.5rem 1.25rem;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    aspect-ratio: 16 / 9;
+}
+
+.branch-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.share-btn {
+    width: 100%;
+    margin-top: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.share-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
 }
 
 /* Popup Styles */

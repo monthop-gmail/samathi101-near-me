@@ -4,6 +4,7 @@ const path = require('path');
 
 const SUITES = [
     { name: 'app.js (jsdom)', file: 'app.test.js' },
+    { name: 'deep link + fallback ไม่มี cluster', file: 'deeplink.test.js' },
     { name: 'sw.js (service worker)', file: 'sw.test.js' },
 ];
 

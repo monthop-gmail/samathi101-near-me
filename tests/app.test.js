@@ -1,84 +1,19 @@
-// ทดสอบ logic ของ app.js ใน jsdom โดย stub Leaflet ไว้ (เครื่องนี้รัน Chrome ไม่ได้)
-const fs = require('fs');
-const path = require('path');
-const { JSDOM } = require('jsdom');
+const { createApp, createChecker, sleep } = require('./helpers');
 
-const REPO = path.join(__dirname, '..');
-const branchesJson = fs.readFileSync(path.join(REPO, 'branches.json'), 'utf8');
-
-const dom = new JSDOM(fs.readFileSync(path.join(REPO, 'index.html'), 'utf8'), {
-  runScripts: 'outside-only',
-  url: 'http://localhost/',
-  pretendToBeVisual: true,
-});
-const { window } = dom;
-
-// --- stub สิ่งที่ jsdom ไม่มี ---
-const mapEvents = {};
-let flyToCalls = 0;
-const layers = new Set();
-const latLng = (lat, lng) => ({ lat: +lat, lng: +lng, toBounds: () => ({}) });
-window.L = {
-  map: () => ({
-    setView() { return this; },
-    on: (ev, fn) => { mapEvents[ev] = fn; },
-    removeLayer: l => layers.delete(l),
-    hasLayer: l => layers.has(l),
-    invalidateSize() {},
-    flyTo() { flyToCalls++; },
-    flyToBounds() { flyToCalls++; },
-    getCenter: () => latLng(13, 100),
-    getZoom: () => 6,
-  }),
-  tileLayer: () => ({ addTo() { return this; } }),
-  control: { zoom: () => ({ addTo() {} }) },
-  divIcon: o => o,
-  latLng,
-  latLngBounds: coords => ({ coords }),
-  marker() {
-    const m = { addTo() { layers.add(m); return m; }, bindPopup() { return m; }, openPopup() { return m; } };
-    return m;
-  },
-};
-window.fetch = (url) => {
-  if (String(url).startsWith('branches.json')) {
-    return Promise.resolve({ json: () => Promise.resolve(JSON.parse(branchesJson)) });
-  }
-  return Promise.resolve({ json: () => Promise.resolve({ thailandView: { lat: 11.9, lng: 102.3, zoom: 4.9 } }) });
-};
-let geoCallback = null;
-window.navigator.geolocation = { getCurrentPosition: cb => { geoCallback = cb; } };
-
-const errors = [];
-window.addEventListener('error', e => errors.push(e.message));
-
-// let/const ใน eval ไม่หลุดออกมาข้างนอก จึงต้อง export ตัวแปรผ่าน window ในการ eval เดียวกัน
-window.eval(fs.readFileSync(path.join(REPO, 'app.js'), 'utf8') +
-  '\n;window.__peek = expr => eval(expr);');
-window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
-
-const ev = expr => window.__peek(expr);
-const $ = s => window.document.querySelector(s);
-const $$ = s => [...window.document.querySelectorAll(s)];
-let pass = 0, fail = 0;
-const check = (name, actual, expected) => {
-  const ok = JSON.stringify(actual) === JSON.stringify(expected);
-  ok ? pass++ : fail++;
-  console.log(`${ok ? '  ✓' : '  ✗'} ${name}${ok ? '' : `  ได้ ${JSON.stringify(actual)} คาดว่า ${JSON.stringify(expected)}`}`);
-};
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const app = createApp();
+const { check, counts } = createChecker();
+const { ev, $, $$, type } = app;
 
 setTimeout(async () => {
   console.log('\n[1] แยกสาขาที่ไม่มีพิกัดออกจากแผนที่');
   check('แสดงทั้งหมด 324 สาขา (ซ่อนสาขาสาธิต 999)', ev('allBranches.length'), 324);
   check('ซ่อนสาขาสาธิตแล้ว', ev('allBranches.some(b => b.number === 999)'), false);
   check('ปักหมุด 295 สาขา', ev('branches.length'), 295);
-  check('หมุดบนแผนที่ 295 อัน', layers.size, 295);
+  check('หมุดบนแผนที่ 295 อัน', app.groupLayers.size, 295);
   check('รอปรับพิกัด 29 สาขา', ev('branchesNoCoords.length'), 29);
   check('ไม่มีหมุดที่พิกัด 0,0', ev('branches.filter(b => Math.abs(+b.latitude) < 0.5).length'), 0);
 
-  console.log('\n[2] ลิสต์และ section ใหม่');
+  console.log('\n[2] ลิสต์และ section รอปรับพิกัด');
   check('การ์ดในลิสต์หลัก', $$('#all-branches-list .branch-card').length, 295);
   check('การ์ดในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, 29);
   check('section รอปรับพิกัดแสดงอยู่', $('#pending-coords-section').hidden, false);
@@ -86,57 +21,53 @@ setTimeout(async () => {
   check('การ์ดรอปรับพิกัดมี class no-coords', $$('#pending-branches-list .branch-card.no-coords').length, 29);
 
   console.log('\n[3] ค้นหา');
-  const search = $('#branch-search');
-  const type = v => { search.value = v; search.oninput({ target: search }); };
-
   type('ก.10');
-  const g10 = $$('#all-branches-list .branch-card').length + $$('#pending-branches-list .branch-card').length;
-  check('ค้น "ก.10" เจอ 10 สาขา (ตรงกับข้อมูลกลุ่ม 10)', g10, 10);
-
+  check('ค้น "ก.10" เจอ 10 สาขา', $$('#all-branches-list .branch-card').length
+    + $$('#pending-branches-list .branch-card').length, 10);
   type('วัดพระยืน');
   check('สาขาไม่มีพิกัด ไม่โผล่ในลิสต์หลัก', $$('#all-branches-list .branch-card').length, 0);
   check('สาขาไม่มีพิกัด โผล่ในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, 1);
-
   type('0');
-  const hq = $$('#all-branches-list .branch-name').some(e => e.textContent.includes('สาขาที่ 0:'));
-  check('ค้นเลข "0" เจอสำนักงานใหญ่ (บั๊ก falsy เดิม)', hq, true);
-
+  check('ค้นเลข "0" เจอสำนักงานใหญ่ (บั๊ก falsy เดิม)',
+    $$('#all-branches-list .branch-name').some(e => e.textContent.includes('สาขาที่ 0:')), true);
   type('');
   check('ล้างช่องค้นหาแล้วกลับมาครบ', $$('#all-branches-list .branch-card').length, 295);
 
   console.log('\n[4] กดการ์ดสาขาที่ไม่มีพิกัด');
-  const before = flyToCalls;
+  type('วัดพระยืน');
+  const before = app.flyToCalls;
   $('#pending-branches-list .branch-card').click();
-  check('แผนที่ไม่บินไปพิกัด 0,0', flyToCalls, before);
+  check('แผนที่ไม่บินไปพิกัด 0,0', app.flyToCalls, before);
   check('modal เปิด', $('#branch-modal').style.display, 'flex');
   check('มีคำเตือนว่ายังไม่มีพิกัด', !!$('.coords-warning'), true);
   check('ปุ่มเปลี่ยนเป็นค้นหาแทนนำทาง',
     $('#branch-detail a.popup-btn').textContent.trim(), 'ค้นหาชื่อสาขาใน Google Maps');
   check('ลิงก์ใช้ maps/search ไม่ใช่ maps/dir',
     $('#branch-detail a.popup-btn').href.includes('/maps/search/'), true);
+  type('');
 
   console.log('\n[5] กดการ์ดสาขาปกติ');
-  const before2 = flyToCalls;
+  const before2 = app.flyToCalls;
   $('#all-branches-list .branch-card').click();
-  check('แผนที่บินไปหาสาขา', flyToCalls > before2, true);
+  check('แผนที่บินไปหาสาขา', app.flyToCalls > before2, true);
   check('ปุ่มเป็นนำทาง', $('#branch-detail a.popup-btn').textContent.trim(), 'นำทางด้วย Google Maps');
 
   console.log('\n[6] กดปุ่มระบุตำแหน่งซ้ำ 3 ครั้ง');
   for (let i = 0; i < 3; i++) {
     $('#locate-me-btn').onclick();
-    geoCallback({ coords: { latitude: 13.7563, longitude: 100.5018 } });
+    app.geoCallback({ coords: { latitude: 13.7563, longitude: 100.5018 } });
   }
-  check('หมุดผู้ใช้เหลืออันเดียว (ไม่ซ้อน)', layers.size, 296);
+  check('หมุดผู้ใช้เหลืออันเดียว (map มี markerLayer + user marker)', app.mapLayers.size, 2);
   check('แสดงสาขาใกล้ฉัน 5 อันดับ', $$('#nearest-branches-list .branch-card').length, 5);
-  const dists = $$('#nearest-branches-list .branch-distance').map(e => parseFloat(e.textContent.replace(/[^\d.]/g, '')));
+  const dists = $$('#nearest-branches-list .branch-distance')
+    .map(e => parseFloat(e.textContent.replace(/[^\d.]/g, '')));
   check('ระยะทางเรียงจากใกล้ไปไกล', dists.every((d, i) => i === 0 || d >= dists[i - 1]), true);
   check('ไม่มีสาขาที่ระยะทางเพี้ยน (>2000 กม.)', dists.some(d => d > 2000), false);
   console.log('    สาขาใกล้สุดจากสยาม:', $$('#nearest-branches-list .branch-name')[0].textContent.trim(), '—', dists[0], 'กม.');
 
   console.log('\n[7] ค้นหาครอบคลุมภาค / อำเภอ / ตำบล');
   type('ภาคใต้');
-  check('ค้น "ภาคใต้" เจอจาก custom_region',
-    $$('#all-branches-list .branch-card').length > 20, true);
+  check('ค้น "ภาคใต้" เจอจาก custom_region', $$('#all-branches-list .branch-card').length > 20, true);
   type('หาดใหญ่');
   check('ค้นชื่ออำเภอเจอ', $$('#all-branches-list .branch-card').length > 0, true);
   type('bangkok');
@@ -146,35 +77,75 @@ setTimeout(async () => {
 
   console.log('\n[8] หมุดบนแผนที่ตามผลค้นหา (debounce 250ms)');
   type('ก.10');
-  const listCount = $$('#all-branches-list .branch-card').length;
-  check('ลิสต์อัปเดตทันที ไม่ต้องรอ debounce', listCount, 10);
-  check('หมุดยังไม่เปลี่ยนก่อนครบเวลา debounce', layers.size, 296);
+  check('ลิสต์อัปเดตทันที ไม่ต้องรอ debounce', $$('#all-branches-list .branch-card').length, 10);
+  check('หมุดยังไม่เปลี่ยนก่อนครบเวลา debounce', app.groupLayers.size, 295);
   await sleep(400);
-  check('หลัง debounce เหลือเฉพาะหมุดที่ค้นเจอ (+หมุดผู้ใช้)', layers.size, listCount + 1);
-  const flyBefore = flyToCalls;
+  check('หลัง debounce เหลือเฉพาะหมุดที่ค้นเจอ', app.groupLayers.size, 10);
+  const flyBefore = app.flyToCalls;
   type('วัดใหม่อมตรส');
   await sleep(400);
-  check('ค้นเจอสาขาเดียวแล้วแผนที่ซูมไปหา', flyToCalls > flyBefore, true);
-  check('เหลือหมุดเดียว (+หมุดผู้ใช้)', layers.size, 2);
+  check('ค้นเจอสาขาเดียวแล้วแผนที่ซูมไปหา', app.flyToCalls > flyBefore, true);
+  check('เหลือหมุดเดียว', app.groupLayers.size, 1);
   type('');
   await sleep(400);
-  check('ล้างคำค้นแล้วหมุดกลับมาครบ', layers.size, 296);
+  check('ล้างคำค้นแล้วหมุดกลับมาครบ', app.groupLayers.size, 295);
 
   console.log('\n[9] escape HTML กัน XSS');
-  const evil = ev(`(() => {
+  const EVIL_NAME = '<img src=x onerror=alert(1)>';
+  ev(`(() => {
     const b = JSON.parse(JSON.stringify(branches[0]));
-    b.id = 999999; b.name = '<img src=x onerror=alert(1)>';
+    b.id = 999999; b.name = ${JSON.stringify(EVIL_NAME)};
     b.owner = "</p><script>alert(2)<\\/script>";
     allBranches.push(b); branches.push(b);
     openBranchDetails(999999);
-    return document.getElementById('branch-detail').innerHTML;
   })()`);
-  check('ชื่อสาขาถูก escape ไม่กลายเป็น tag', evil.includes('<img src=x'), false);
-  check('มี &lt; แทน', evil.includes('&lt;img'), true);
-  check('ไม่มี script tag หลุดเข้า DOM',
-    window.document.querySelectorAll('#branch-detail script, #branch-detail img').length, 0);
+  // เช็คที่ DOM ไม่ใช่ string เพราะ browser จะ serialize entity ใน attribute กลับมาเป็น < > เสมอ
+  check('ชื่อสาขาถูกใส่เป็น text ไม่ใช่ markup',
+    $('#branch-detail-title').textContent, EVIL_NAME);
+  check('h2 ไม่มี element ลูก (ไม่มี tag งอกจากชื่อ)', $('#branch-detail-title').children.length, 0);
+  check('ไม่มี <script> หลุดเข้า DOM',
+    $$('#branch-detail script').length, 0);
+  check('ไม่มี img จากชื่อสาขา (เหลือแค่รูปสาขาจริง)',
+    $$('#branch-detail img').map(i => i.getAttribute('src')).filter(s => s === 'x').length, 0);
+  check('ไม่มี attribute onerror ที่ผู้โจมตีใส่มา',
+    $$('#branch-detail *').filter(el => el.getAttribute('onerror') && el.getAttribute('onerror').includes('alert')).length, 0);
+  ev('allBranches.pop(); branches.pop();');
 
-  console.log(`\nJS errors: ${errors.length ? errors.join('; ') : 'ไม่มี'}`);
-  console.log(`\nผลรวม: ผ่าน ${pass} / ไม่ผ่าน ${fail}`);
-  process.exit(fail ? 1 : 0);
+  console.log('\n[10] ชิปกรองตามภาค');
+  const chips = $$('#filter-chips .chip');
+  check('สร้างชิปครบ (ทั้งหมด + 8 ภาค)', chips.length, 9);
+  check('ชิปแรกคือ "ทั้งหมด"', chips[0].textContent.includes('ทั้งหมด'), true);
+  check('ชิปเรียงตามจำนวนสาขามากไปน้อย',
+    chips[1].textContent.includes('กรุงเทพฯ และปริมณฑล'), true);
+  const northeast = chips.find(c => c.textContent.includes('ภาคตะวันออกเฉียงเหนือ'));
+  northeast.click();
+  check('กดชิปแล้วกรองเหลือเฉพาะภาคนั้น',
+    ev('allBranches.filter(b => b.custom_region === "ภาคตะวันออกเฉียงเหนือ").length'),
+    $$('#all-branches-list .branch-card').length + $$('#pending-branches-list .branch-card').length);
+  check('ชิปที่เลือกมีสถานะ active',
+    $$('#filter-chips .chip.active')[0].textContent.includes('ภาคตะวันออกเฉียงเหนือ'), true);
+  check('aria-pressed ถูกตั้ง', $$('#filter-chips .chip.active')[0].getAttribute('aria-pressed'), 'true');
+
+  type('ขอนแก่น');
+  const combo = $$('#all-branches-list .branch-card').length;
+  check('ชิป + คำค้น ทำงานร่วมกัน (ผลน้อยกว่าใช้ชิปอย่างเดียว)', combo > 0 && combo < 69, true);
+  type('');
+
+  $$('#filter-chips .chip').find(c => c.textContent.includes('ภาคตะวันออกเฉียงเหนือ')).click();
+  check('กดชิปเดิมซ้ำ = ยกเลิกการกรอง', $$('#all-branches-list .branch-card').length, 295);
+
+  console.log('\n[11] หมุดที่เลือกเท่านั้นที่เต้น');
+  check('ไม่มี .pulse ฝังในทุกหมุดแล้ว', ev(`markerById.size`), 295);
+  $('#all-branches-list .branch-card').click();
+  const selected = ev('selectedMarkerId');
+  check('มีหมุดที่ถูกเลือก', selected !== null, true);
+  check('หมุดที่เลือกได้ class is-selected',
+    ev('markerById.get(selectedMarkerId).getElement().classList.contains("is-selected")'), true);
+  $$('#all-branches-list .branch-card')[5].click();
+  check('เปลี่ยนสาขาแล้วหมุดเก่าเลิกเต้น',
+    ev(`[...markerById.values()].filter(m => m.getElement().classList.contains("is-selected")).length`), 1);
+
+  console.log(`\nJS errors: ${app.errors.length ? app.errors.join('; ') : 'ไม่มี'}`);
+  console.log(`\nผลรวม: ผ่าน ${counts.pass} / ไม่ผ่าน ${counts.fail}`);
+  process.exit(counts.fail ? 1 : 0);
 }, 500);

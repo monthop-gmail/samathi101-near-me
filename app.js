@@ -6,7 +6,10 @@ let userLocation = null;
 let userMarker = null;
 let markers = [];
 let markerById = new Map();
+let markerLayer = null;      // MarkerClusterGroup ถ้าโหลดปลั๊กอินได้ ไม่งั้นเป็น LayerGroup ธรรมดา
+let selectedMarkerId = null;
 let searchMapTimer = null;
+let activeRegion = null;     // ชิปกรองตามภาคที่เลือกอยู่
 let mapConfig = null;
 let adminMode = false;
 
@@ -47,6 +50,18 @@ function initMap() {
     L.control.zoom({
         position: 'bottomright'
     }).addTo(map);
+
+    // จัดกลุ่มหมุดเพื่อไม่ให้ 295 หมุดทับกันจนอ่านไม่ออกและกิน CPU
+    // ถ้าปลั๊กอินโหลดไม่ได้ (CDN ล่ม) ให้ตกไปใช้ LayerGroup ธรรมดาแทน
+    markerLayer = typeof L.markerClusterGroup === 'function'
+        ? L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            disableClusteringAtZoom: 13
+        })
+        : L.layerGroup();
+    markerLayer.addTo(map);
 
     // Initial config load
     loadConfig();
@@ -180,15 +195,22 @@ async function loadBranches() {
         branchesNoCoords = allBranches.filter(b => !hasUsableCoords(b));
 
         if (branchesNoCoords.length) {
-            console.warn(`${branchesNoCoords.length} สาขายังไม่มีพิกัดที่ใช้งานได้:`,
-                branchesNoCoords.map(b => `${b.number} ${b.name}`));
+            console.warn(`${branchesNoCoords.length} สาขายังไม่มีพิกัดที่ใช้งานได้ (เลขสาขา): ` +
+                branchesNoCoords.map(b => b.number).join(', '));
         }
 
         renderMarkers();
+        renderFilterChips();
         renderAllBranchesList();
-        
-        // Fit map for the first time AFTER data is ready for consistency
-        fitThailand();
+
+        // ถ้าเปิดมาจากลิงก์ ?branch=... ให้บินไปสาขานั้นแทนการซูมทั้งประเทศ
+        // ไม่งั้นสองอนิเมชันจะชนกัน
+        if (new URLSearchParams(window.location.search).has('branch')) {
+            openBranchFromUrl();
+        } else {
+            // Fit map for the first time AFTER data is ready for consistency
+            fitThailand();
+        }
     } catch (error) {
         console.error('Error loading branches:', error);
         showToast('ไม่สามารถโหลดข้อมูลสาขาได้');
@@ -197,18 +219,17 @@ async function loadBranches() {
 
 // Render Markers on Map
 function renderMarkers() {
-    markers.forEach(m => map.removeLayer(m));
+    markerLayer.clearLayers();
     markers = [];
     markerById.clear();
 
     // branches มีเฉพาะสาขาที่พิกัดใช้งานได้แล้ว (กรองใน loadBranches)
     branches.forEach(branch => {
+        // ไม่ใส่ .pulse ในทุกหมุดแล้ว เพราะ animation แบบ infinite เกือบ 300 ตัว
+        // พร้อมกันกิน CPU/แบตหนักมากบนมือถือ — ให้เต้นเฉพาะหมุดที่ถูกเลือก
         const customIcon = L.divIcon({
             className: 'custom-marker-wrapper',
-            html: `
-                <div class="pulse"></div>
-                <div class="custom-pin"></div>
-            `,
+            html: '<div class="custom-pin"></div>',
             iconSize: [24, 24],
             iconAnchor: [12, 24],
             popupAnchor: [0, -24]
@@ -216,7 +237,8 @@ function renderMarkers() {
 
         const marker = L.marker([branch.latitude, branch.longitude], {
             icon: customIcon
-        }).addTo(map);
+        });
+        markerLayer.addLayer(marker);
 
         marker.bindPopup(`
             <div class="popup-content">
@@ -233,12 +255,39 @@ function renderMarkers() {
 
 // ซ่อน/แสดงหมุดให้ตรงกับผลการค้นหา (แตะเฉพาะหมุดที่สถานะเปลี่ยนจริง)
 function updateVisibleMarkers(visibleIds) {
+    const toAdd = [];
+    const toRemove = [];
+
     markerById.forEach((marker, id) => {
         const shouldShow = visibleIds.has(id);
-        const onMap = map.hasLayer(marker);
-        if (shouldShow && !onMap) marker.addTo(map);
-        else if (!shouldShow && onMap) map.removeLayer(marker);
+        const onMap = markerLayer.hasLayer(marker);
+        if (shouldShow && !onMap) toAdd.push(marker);
+        else if (!shouldShow && onMap) toRemove.push(marker);
     });
+
+    // MarkerClusterGroup มี bulk API ที่เร็วกว่าการวนเพิ่มทีละตัวมาก
+    if (typeof markerLayer.addLayers === 'function') {
+        if (toRemove.length) markerLayer.removeLayers(toRemove);
+        if (toAdd.length) markerLayer.addLayers(toAdd);
+        return;
+    }
+
+    toRemove.forEach(m => markerLayer.removeLayer(m));
+    toAdd.forEach(m => markerLayer.addLayer(m));
+}
+
+// ให้หมุดของสาขาที่กำลังดูอยู่เต้น เพื่อให้หาเจอง่ายบนแผนที่
+function highlightMarker(branchId) {
+    if (selectedMarkerId !== null) {
+        const prev = markerById.get(selectedMarkerId);
+        const prevEl = prev && prev.getElement && prev.getElement();
+        if (prevEl) prevEl.classList.remove('is-selected');
+    }
+
+    selectedMarkerId = branchId;
+    const marker = markerById.get(branchId);
+    const el = marker && marker.getElement && marker.getElement();
+    if (el) el.classList.add('is-selected');
 }
 
 // ซูมแผนที่ให้เห็นผลการค้นหาทั้งหมด (เว้นที่ให้ header และ bottom sheet)
@@ -404,6 +453,39 @@ function branchMatchesQuery(branch, query, groupQuery) {
     return false;
 }
 
+// สร้างชิปกรองตามภาคจากข้อมูลจริง (เรียงตามจำนวนสาขามากไปน้อย)
+function renderFilterChips() {
+    const counts = new Map();
+    allBranches.forEach(b => {
+        if (!b.custom_region) return;
+        counts.set(b.custom_region, (counts.get(b.custom_region) || 0) + 1);
+    });
+
+    const container = document.getElementById('filter-chips');
+    container.innerHTML = '';
+
+    const chips = [{ label: 'ทั้งหมด', region: null, count: allBranches.length }].concat(
+        [...counts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([region, count]) => ({ label: region, region, count }))
+    );
+
+    chips.forEach(({ label, region, count }) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (activeRegion === region ? ' active' : '');
+        chip.setAttribute('aria-pressed', String(activeRegion === region));
+        chip.innerHTML = `${esc(label)} <span class="chip-count">${count}</span>`;
+        chip.onclick = () => {
+            // กดชิปเดิมซ้ำ = ยกเลิกการกรอง
+            activeRegion = activeRegion === region ? null : region;
+            renderFilterChips();
+            applySearch(document.getElementById('branch-search').value);
+        };
+        container.appendChild(chip);
+    });
+}
+
 function applySearch(rawQuery) {
     const query = rawQuery.toLowerCase().trim();
 
@@ -411,19 +493,21 @@ function applySearch(rawQuery) {
     const cleaned = query.replace('ก.', '').replace('กลุ่ม', '').trim();
     const groupQuery = /^\d+$/.test(cleaned) ? cleaned : null;
 
-    const matches = b => branchMatchesQuery(b, query, groupQuery);
+    const matches = b => (!activeRegion || b.custom_region === activeRegion)
+        && branchMatchesQuery(b, query, groupQuery);
     const mapped = branches.filter(matches);
     const pending = branchesNoCoords.filter(matches);
 
     // ลิสต์อัปเดตทันทีเพื่อให้พิมพ์แล้วรู้สึกตอบสนอง
     renderBranchLists(mapped, pending);
-    if (query.length > 0) openPanel(); else closePanel();
+    const isFiltering = query.length > 0 || activeRegion !== null;
+    if (isFiltering) openPanel(); else closePanel();
 
     // ส่วนแผนที่หน่วงไว้ เพราะการซ่อน/แสดงหมุดและ flyTo หนักกว่าการวาดลิสต์มาก
     clearTimeout(searchMapTimer);
     searchMapTimer = setTimeout(() => {
         updateVisibleMarkers(new Set(mapped.map(b => b.id)));
-        if (query.length > 0) fitToBranches(mapped);
+        if (isFiltering) fitToBranches(mapped);
     }, 250);
 }
 
@@ -469,8 +553,15 @@ function openBranchDetails(id) {
         : `<div class="coords-warning">สาขานี้ยังไม่มีพิกัดในระบบ จึงยังนำทางอัตโนมัติไม่ได้</div>
            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.name)}" target="_blank" rel="noopener" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">ค้นหาชื่อสาขาใน Google Maps</a>`;
 
+    // รูปสาขาไฟล์ค่อนข้างใหญ่ (~800KB) จึงโหลดตอนเปิดหน้ารายละเอียดเท่านั้น
+    // และถ้าโหลดไม่สำเร็จให้ซ่อนกรอบรูปไปเลย ไม่ต้องเหลือช่องว่าง
+    const photo = branch.img
+        ? `<div class="branch-photo-wrap"><img class="branch-photo" src="${esc(branch.img)}" alt="รูปสาขา ${esc(branch.name)}" loading="lazy" decoding="async" onerror="this.closest('.branch-photo-wrap').remove()"></div>`
+        : '';
+
     const detailHtml = `
-        <h2 style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${esc(branch.name)}</h2>
+        ${photo}
+        <h2 id="branch-detail-title" style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${esc(branch.name)}</h2>
         <div style="margin-bottom: 1.5rem;">
             <p><strong>หมายเลขสาขา:</strong> ${esc(branch.number)}</p>
             <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${esc(branch.group_id) || 'ไม่ระบุ'}</span></p>
@@ -481,10 +572,86 @@ function openBranchDetails(id) {
             <p><strong>ภาค:</strong> ${esc(branch.custom_region) || 'ไม่ระบุ'}</p>
         </div>
         ${mapsAction}
+        <button type="button" class="share-btn" id="share-branch-btn">🔗 คัดลอกลิงก์สาขานี้</button>
     `;
 
     document.getElementById('branch-detail').innerHTML = detailHtml;
     document.getElementById('branch-modal').style.display = 'flex';
+    document.querySelector('.close-btn').focus();
+
+    highlightMarker(branch.id);
+    setBranchInUrl(branch.number);
+
+    document.getElementById('share-branch-btn').onclick = () => shareBranch(branch);
+}
+
+// ลิงก์ตรงไปยังสาขา เช่น ?branch=35 เพื่อให้ส่งต่อใน LINE ได้
+function branchUrl(number) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('branch', number);
+    return url.href;
+}
+
+function setBranchInUrl(number) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('branch', number);
+    window.history.replaceState(null, '', url.pathname + url.search);
+}
+
+function clearBranchFromUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('branch');
+    window.history.replaceState(null, '', url.pathname + url.search);
+}
+
+async function shareBranch(branch) {
+    const url = branchUrl(branch.number);
+    const title = `สาขาที่ ${branch.number}: ${branch.name}`;
+
+    // มือถือส่วนใหญ่มี Web Share API ให้เลือกส่งเข้า LINE ได้เลย
+    if (navigator.share) {
+        try {
+            await navigator.share({ title, url });
+            return;
+        } catch (err) {
+            if (err && err.name === 'AbortError') return; // ผู้ใช้กดยกเลิกเอง
+        }
+    }
+
+    try {
+        await navigator.clipboard.writeText(url);
+        showToast('คัดลอกลิงก์แล้ว');
+    } catch (err) {
+        showToast('คัดลอกลิงก์ไม่สำเร็จ');
+    }
+}
+
+// เปิดสาขาจาก ?branch=<เลขสาขา> ตอนโหลดหน้า
+function openBranchFromUrl() {
+    const raw = new URLSearchParams(window.location.search).get('branch');
+    if (raw === null) return;
+
+    const number = parseInt(raw, 10);
+    const branch = allBranches.find(b => b.number === number);
+    if (!branch) {
+        showToast(`ไม่พบสาขาที่ ${raw}`); // showToast ใช้ textContent จึงไม่ต้อง escape
+        return;
+    }
+
+    if (hasUsableCoords(branch)) {
+        const isMobile = window.innerWidth < 768;
+        map.flyToBounds(L.latLng(branch.latitude, branch.longitude).toBounds(1500), {
+            paddingTopLeft: [0, 90],
+            paddingBottomRight: [0, isMobile ? window.innerHeight * 0.5 : 40],
+            duration: 1.5
+        });
+    }
+    openBranchDetails(branch.id);
+}
+
+function closeBranchModal() {
+    document.getElementById('branch-modal').style.display = 'none';
+    clearBranchFromUrl();
 }
 
 function showToast(message) {
@@ -518,14 +685,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('locate-me-btn').onclick = locateUser;
     document.getElementById('fit-thailand-btn').onclick = fitThailand;
     
-    document.querySelector('.close-btn').onclick = () => {
-        document.getElementById('branch-modal').style.display = 'none';
-    };
+    document.querySelector('.close-btn').onclick = closeBranchModal;
 
-    window.onclick = (event) => {
-        const modal = document.getElementById('branch-modal');
-        if (event.target == modal) modal.style.display = 'none';
-    };
+    // ใช้ addEventListener แทน window.onclick เพื่อไม่ไปทับ handler อื่น
+    window.addEventListener('click', (event) => {
+        if (event.target === document.getElementById('branch-modal')) closeBranchModal();
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        if (document.getElementById('branch-modal').style.display === 'flex') {
+            closeBranchModal();
+        } else {
+            closePanel();
+        }
+    });
 
     // Simplified Bottom Sheet Interaction (Click/Tap only)
     const handle = document.querySelector('.panel-handle');

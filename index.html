@@ -2,15 +2,32 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ไม่ล็อก maximum-scale เพื่อให้ผู้สูงอายุซูมอ่านได้ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>สถาบันพลังจิตตานุภาพ ใกล้ฉัน</title>
-    <meta name="description" content="ค้นหาสาขาสถาบันพลังจิตตานุภาพที่อยู่ใกล้คุณที่สุด">
-    
+    <meta name="description" content="ค้นหาสาขาสถาบันพลังจิตตานุภาพที่อยู่ใกล้คุณที่สุด จาก 324 สาขาทั่วประเทศ">
+    <link rel="canonical" href="https://samathi101-near-me.pages.dev/">
+
+    <!-- แชร์ลิงก์ใน LINE / Facebook ให้ขึ้นการ์ดพร้อมรูป -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="สถาบันพลังจิตตานุภาพ ใกล้ฉัน">
+    <meta property="og:title" content="สถาบันพลังจิตตานุภาพ ใกล้ฉัน">
+    <meta property="og:description" content="ค้นหาสาขาสถาบันพลังจิตตานุภาพที่อยู่ใกล้คุณที่สุด จาก 324 สาขาทั่วประเทศ">
+    <meta property="og:url" content="https://samathi101-near-me.pages.dev/">
+    <meta property="og:image" content="https://samathi101-near-me.pages.dev/icons/icon-512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:locale" content="th_TH">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="สถาบันพลังจิตตานุภาพ ใกล้ฉัน">
+    <meta name="twitter:description" content="ค้นหาสาขาสถาบันพลังจิตตานุภาพที่อยู่ใกล้คุณที่สุด จาก 324 สาขาทั่วประเทศ">
+    <meta name="twitter:image" content="https://samathi101-near-me.pages.dev/icons/icon-512.png">
+
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +35,8 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin=""/>
+
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -28,14 +46,16 @@
                 <h1>สถาบันพลังจิตตานุภาพ ใกล้ฉัน</h1>
             </div>
             <div class="search-bar">
-                <input type="text" id="branch-search" placeholder="ค้นหาสาขาหรือจังหวัด...">
-                <button class="action-btn" id="fit-thailand-btn" title="ซูมพอดีประเทศไทย">
-                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15 3l2.3 2.3-2.89 2.87 1.42 1.42L18.7 6.7 21 9V3zM3 9l2.3-2.3 2.87 2.89 1.42-1.42L6.7 5.3 9 3H3zm6 12l-2.3-2.3 2.89-2.87-1.42-1.42L5.3 17.3 3 15v6zm12-6l-2.3 2.3-2.87-2.89-1.42 1.42 2.89 2.87L15 21h6z"/></svg>
+                <label for="branch-search" class="visually-hidden">ค้นหาสาขา</label>
+                <input type="search" id="branch-search" placeholder="ค้นหาสาขา จังหวัด หรือ ก.10..." autocomplete="off">
+                <button class="action-btn" id="fit-thailand-btn" title="ซูมพอดีประเทศไทย" aria-label="ซูมแผนที่ให้เห็นทั้งประเทศไทย">
+                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15 3l2.3 2.3-2.89 2.87 1.42 1.42L18.7 6.7 21 9V3zM3 9l2.3-2.3 2.87 2.89 1.42-1.42L6.7 5.3 9 3H3zm6 12l-2.3-2.3 2.89-2.87-1.42-1.42L5.3 17.3 3 15v6zm12-6l-2.3 2.3-2.87-2.89-1.42 1.42 2.89 2.87L15 21h6z"/></svg>
                 </button>
-                <button class="action-btn" id="locate-me-btn" title="ค้นหาใกล้ฉัน">
-                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                <button class="action-btn" id="locate-me-btn" title="ค้นหาใกล้ฉัน" aria-label="ค้นหาสาขาใกล้ตำแหน่งของฉัน">
+                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
                 </button>
             </div>
+            <div class="filter-chips" id="filter-chips" role="group" aria-label="กรองตามภาค"></div>
         </header>
 
         <main>
@@ -46,6 +66,7 @@
                 <div class="panel-content">
                     <div class="near-me-section">
                         <h2>สาขาใกล้คุณที่สุด</h2>
+                        <p class="section-note">ระยะทางเป็นเส้นตรง ไม่ใช่ระยะทางถนนจริง</p>
                         <div id="nearest-branches-list">
                             <div class="location-prompt" style="color:var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1rem 0;">
                                 กรุณากดปุ่ม 📍 ด้านบนเพื่อค้นหาสาขาใกล้คุณ
@@ -65,9 +86,9 @@
             </div>
         </main>
 
-        <div id="branch-modal" class="modal">
+        <div id="branch-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="branch-detail-title">
             <div class="modal-content glass">
-                <span class="close-btn">&times;</span>
+                <button class="close-btn" type="button" aria-label="ปิดหน้าต่าง">&times;</button>
                 <div id="branch-detail"></div>
             </div>
         </div>
@@ -77,6 +98,8 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- ถ้าโหลดไม่ได้ app.js จะ fallback ไปปักหมุดแบบเดิมอัตโนมัติ -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
     <script src="app.js"></script>
 </body>
 </html>

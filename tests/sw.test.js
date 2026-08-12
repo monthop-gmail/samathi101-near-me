@@ -91,8 +91,8 @@ const check = (name, actual, expected) => {
   const cached = [...env.store.values()][0];
   check('แคชไฟล์หลักครบ (รวม config.json ที่เดิมตกหล่น)',
     ['index.html', 'app.js', 'index.css', 'branches.json', 'config.json'].every(f => cached.has(`${ORIGIN}/${f}`)), true);
-  check('แคช Leaflet + fonts จาก CDN ด้วย',
-    [...cached.keys()].filter(u => !u.startsWith(ORIGIN)).length, 3);
+  check('แคช Leaflet + markercluster + fonts จาก CDN ด้วย',
+    [...cached.keys()].filter(u => !u.startsWith(ORIGIN)).length, 5);
 
   console.log('\n[2] ติดตั้งตอน CDN ล่ม (บั๊กเดิม: addAll ล้มทั้งชุด)');
   env = makeEnv({ cdnDown: true });

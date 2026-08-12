@@ -36,15 +36,15 @@ body {
 }
 
 header {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(15, 23, 42, 0.82);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     z-index: 1005;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.7rem;
 }
 
 .logo-container {
@@ -61,8 +61,9 @@ header {
 }
 
 h1 {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     background: var(--primary-gradient);
     -webkit-background-clip: text;
     background-clip: text;
@@ -73,10 +74,10 @@ h1 {
     display: flex;
     align-items: center;
     gap: 0.25rem; /* Narrow gap for mobile */
-    background: rgba(255, 255, 255, 0.05);
-    padding: 4px;
-    border-radius: 14px;
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     transition: all 0.3s ease;
     width: 100%;
 }
@@ -107,28 +108,42 @@ h1 {
 }
 
 .action-btn {
-    background: var(--primary-gradient);
+    background: none;
     border: none;
-    color: white;
-    width: 38px; /* Slightly smaller for mobile compatibility */
-    height: 38px;
+    color: var(--text-dim);
+    width: 36px;
+    height: 36px;
     flex-shrink: 0; /* Never shrink buttons */
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: all 0.2s ease;
+}
+
+.action-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 .action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+}
+
+/* ปุ่มระบุตำแหน่งเป็น action หลัก จึงเน้นด้วยสีแทนการใส่เงาหนาๆ */
+#locate-me-btn {
+    color: #a5b4fc;
+}
+
+#locate-me-btn:hover {
+    background: rgba(99, 102, 241, 0.16);
+    color: #c7d2fe;
 }
 
 .action-btn:active {
-    transform: translateY(0) scale(0.95);
+    transform: scale(0.94);
 }
 
 .action-btn:focus-visible,
@@ -148,14 +163,52 @@ h1 {
     white-space: nowrap;
 }
 
-/* ชิปกรองตามภาค */
+/* แถบกรอง: ปุ่มสลับโหมด + ชิป */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.chip-mode {
+    display: flex;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.045);
+    border-radius: 999px;
+    padding: 2px;
+}
+
+.mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
 .filter-chips {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     overflow-x: auto;
     scrollbar-width: none;
-    margin: -0.25rem 0;
-    padding-bottom: 2px;
+    scroll-behavior: smooth;
+    flex: 1;
+    min-width: 0;
+    /* เผื่อขอบให้ outline ของ focus ไม่ถูกตัด */
+    padding: 2px 0;
+    /* บอกใบ้ว่ายังเลื่อนต่อได้ */
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
 }
 
 .filter-chips::-webkit-scrollbar {
@@ -164,34 +217,33 @@ h1 {
 
 .chip {
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    color: var(--text-dim);
-    padding: 6px 12px;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: var(--text-muted);
+    padding: 4px 11px;
     border-radius: 999px;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .chip:hover {
-    background: rgba(255, 255, 255, 0.09);
-    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-dim);
 }
 
 .chip.active {
-    background: var(--primary-gradient);
-    border-color: transparent;
-    color: #fff;
-    font-weight: 600;
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(129, 140, 248, 0.5);
+    color: #c7d2fe;
 }
 
 .chip-count {
-    opacity: 0.65;
-    font-size: 0.75rem;
-    margin-left: 2px;
+    opacity: 0.5;
+    font-size: 0.72rem;
+    margin-left: 3px;
 }
 
 main {
@@ -211,12 +263,12 @@ main {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
-    border: 1px solid var(--glass-border);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 1001;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     height: 75%; /* Limit height to 75% of main container so map is exactly 25% visible */
@@ -231,12 +283,12 @@ main {
 
 
 .panel-handle {
-    width: 60px;
-    height: 6px;
-    background: var(--text-dim);
-    border-radius: 3px;
-    margin: 15px auto;
-    opacity: 0.6;
+    width: 44px;
+    height: 4px;
+    background: var(--text-muted);
+    border-radius: 2px;
+    margin: 14px auto 10px;
+    opacity: 0.5;
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -244,27 +296,30 @@ main {
 .panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 0 1.5rem 2rem 1.5rem;
-    padding-bottom: calc(2rem + var(--safe-area-inset-bottom));
+    padding: 0.5rem 1.5rem 2rem 1.5rem;
+    padding-bottom: calc(2.5rem + var(--safe-area-inset-bottom));
 }
 
 h2 {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 0.8rem;
+    margin-bottom: 0.85rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
     font-weight: 500;
 }
 
 .near-me-section {
-    margin-bottom: 2rem;
+    margin-bottom: 2.75rem;
+}
+
+.all-branches-section {
+    margin-bottom: 1rem;
 }
 
 .pending-coords-section {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--glass-border);
+    margin-top: 2.75rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .pending-coords-section[hidden] {
@@ -289,13 +344,14 @@ h2 {
 }
 
 /* สาขาที่ยังไม่มีพิกัด: ทำให้ต่างจากการ์ดปกติ เพราะกดแล้วแผนที่จะไม่ขยับ */
-.branch-card.no-coords {
-    border-style: dashed;
-    opacity: 0.85;
+.branch-card.no-coords .branch-name {
+    color: var(--text-dim);
 }
 
-.branch-card.no-coords .branch-location::before {
-    content: '❓';
+.branch-card.no-coords .branch-location::after {
+    content: ' · ไม่มีพิกัด';
+    color: #d9a441;
+    opacity: 0.8;
 }
 
 .coords-warning {
@@ -309,51 +365,51 @@ h2 {
     margin-bottom: 0.75rem;
 }
 
-/* Branch Cards */
+/* Branch Cards — ไม่มีกรอบ ใช้เส้นคั่นบางๆ ให้ลิสต์อ่านโล่งตา */
 .branch-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 18px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
+    padding: 0.95rem 0.75rem;
+    margin: 0 -0.75rem;
+    border-radius: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background 0.2s ease;
     position: relative;
-    overflow: hidden;
+}
+
+.branch-card:last-child {
+    border-bottom: none;
 }
 
 .branch-card:hover {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.branch-card:active {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(99, 102, 241, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .branch-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: baseline;
     gap: 10px;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.25rem;
 }
 
 .branch-name {
-    font-weight: 600;
-    font-size: 1.15rem;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.45;
     color: var(--text-main);
     flex: 1;
 }
 
 .group-badge {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    padding: 2px 8px;
-    border-radius: 6px;
+    color: #d9a441;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
     white-space: nowrap;
-    text-transform: uppercase;
+    opacity: 0.9;
 }
 
 .group-text {
@@ -373,30 +429,16 @@ h2 {
 }
 
 .branch-location {
-    font-size: 0.95rem;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.branch-location::before {
-    content: '📍';
-    font-size: 0.8rem;
-    opacity: 0.7;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
 }
 
 .branch-distance {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.12);
-    padding: 5px 12px;
-    border-radius: 10px;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #34d399;
 }
 
 /* Custom Marker */
@@ -497,14 +539,36 @@ h2 {
 
 .modal-content {
     background: var(--bg-dark);
-    max-width: 500px;
+    max-width: 480px;
     width: 100%;
-    border-radius: 24px;
+    max-height: 88dvh;
+    overflow-y: auto;
+    border-radius: 20px;
     position: relative;
-    padding: 2.5rem 2rem;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-premium);
+    padding: 2rem 1.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.45);
     animation: slideUp 0.3s ease-out;
+}
+
+#branch-detail p {
+    padding: 0.5rem 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+#branch-detail p strong {
+    color: var(--text-muted);
+    font-weight: 400;
+    flex-shrink: 0;
+}
+
+#branch-detail p:last-child {
+    border-bottom: none;
 }
 
 @keyframes slideUp {
@@ -572,16 +636,22 @@ h2 {
 }
 
 .popup-btn {
-    background: var(--primary-gradient);
+    background: rgba(99, 102, 241, 0.9);
     border: none;
     color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
     margin-top: 10px;
     cursor: pointer;
     width: 100%;
     font-family: inherit;
+    font-size: 0.9rem;
     font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.popup-btn:hover {
+    background: rgba(99, 102, 241, 1);
 }
 
 /* Toast */

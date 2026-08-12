@@ -112,6 +112,7 @@ setTimeout(async () => {
   ev('allBranches.pop(); branches.pop();');
 
   console.log('\n[10] ชิปกรองตามภาค');
+  check('เริ่มต้นที่โหมดภาค', $('#chip-mode-region').classList.contains('active'), true);
   const chips = $$('#filter-chips .chip');
   check('สร้างชิปครบ (ทั้งหมด + 8 ภาค)', chips.length, 9);
   check('ชิปแรกคือ "ทั้งหมด"', chips[0].textContent.includes('ทั้งหมด'), true);
@@ -134,7 +135,43 @@ setTimeout(async () => {
   $$('#filter-chips .chip').find(c => c.textContent.includes('ภาคตะวันออกเฉียงเหนือ')).click();
   check('กดชิปเดิมซ้ำ = ยกเลิกการกรอง', $$('#all-branches-list .branch-card').length, 295);
 
-  console.log('\n[11] หมุดที่เลือกเท่านั้นที่เต้น');
+  console.log('\n[11] ชิปกลุ่ม + สลับโหมด');
+  const groupIds = ev('[...new Set(allBranches.map(b => b.group_id).filter(g => g && g !== 999))]');
+  $('#chip-mode-group').click();
+  check('สลับเป็นโหมดกลุ่มแล้ว', $('#chip-mode-group').classList.contains('active'), true);
+  check('โหมดภาคเลิก active', $('#chip-mode-region').classList.contains('active'), false);
+  check('aria-pressed สลับตาม', $('#chip-mode-group').getAttribute('aria-pressed'), 'true');
+  const groupChips = $$('#filter-chips .chip');
+  check(`ชิปกลุ่มครบ (ทั้งหมด + ${groupIds.length} กลุ่ม)`, groupChips.length, groupIds.length + 1);
+  check('ไม่มีชิป ก.999 (ค่า placeholder)',
+    groupChips.some(c => c.textContent.includes('ก.999')), false);
+  check('ชิปกลุ่มเรียงตามเลขกลุ่ม',
+    [groupChips[1].textContent.trim().split(' ')[0], groupChips[2].textContent.trim().split(' ')[0]],
+    ['ก.1', 'ก.2']);
+
+  const g7 = groupChips.find(c => c.textContent.startsWith('ก.7 '));
+  g7.click();
+  check('กดชิป ก.7 แล้วกรองถูกกลุ่ม',
+    $$('#all-branches-list .branch-card').length + $$('#pending-branches-list .branch-card').length,
+    ev('allBranches.filter(b => b.group_id === 7).length'));
+  await sleep(400);
+  check('หมุดบนแผนที่กรองตามกลุ่มด้วย',
+    app.groupLayers.size, ev('branches.filter(b => b.group_id === 7).length'));
+
+  console.log('\n[12] สลับโหมดแล้วตัวกรองที่มองไม่เห็นต้องถูกล้าง');
+  $('#chip-mode-region').click();
+  check('กลับมาโหมดภาค', $('#chip-mode-region').classList.contains('active'), true);
+  check('ตัวกรองกลุ่มถูกล้าง', ev('activeGroup'), null);
+  check('กลับมาแสดงครบทุกสาขา', $$('#all-branches-list .branch-card').length, 295);
+  $$('#filter-chips .chip').find(c => c.textContent.includes('ภาคเหนือ')).click();
+  $('#chip-mode-group').click();
+  check('สลับกลับไปโหมดกลุ่ม ตัวกรองภาคถูกล้าง', ev('activeRegion'), null);
+  check('ชิป "ทั้งหมด" active หลังสลับโหมด',
+    $$('#filter-chips .chip')[0].classList.contains('active'), true);
+  $('#chip-mode-region').click();
+  await sleep(400);
+
+  console.log('\n[13] หมุดที่เลือกเท่านั้นที่เต้น');
   check('ไม่มี .pulse ฝังในทุกหมุดแล้ว', ev(`markerById.size`), 295);
   $('#all-branches-list .branch-card').click();
   const selected = ev('selectedMarkerId');

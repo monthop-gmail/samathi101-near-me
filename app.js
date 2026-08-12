@@ -9,7 +9,12 @@ let markerById = new Map();
 let markerLayer = null;      // MarkerClusterGroup ถ้าโหลดปลั๊กอินได้ ไม่งั้นเป็น LayerGroup ธรรมดา
 let selectedMarkerId = null;
 let searchMapTimer = null;
-let activeRegion = null;     // ชิปกรองตามภาคที่เลือกอยู่
+let activeRegion = null;     // ชิปภาคที่เลือกอยู่
+let activeGroup = null;      // ชิปกลุ่มที่เลือกอยู่
+let chipMode = 'region';     // โหมดชิปที่กำลังแสดง: 'region' หรือ 'group'
+
+// group_id 999 เป็นค่า placeholder ของสาขาที่ยังไม่ถูกจัดกลุ่มจริง ไม่ต้องขึ้นเป็นชิป
+const PLACEHOLDER_GROUP_ID = 999;
 let mapConfig = null;
 let adminMode = false;
 
@@ -453,37 +458,69 @@ function branchMatchesQuery(branch, query, groupQuery) {
     return false;
 }
 
-// สร้างชิปกรองตามภาคจากข้อมูลจริง (เรียงตามจำนวนสาขามากไปน้อย)
-function renderFilterChips() {
+// นับจำนวนสาขาต่อค่าหนึ่งๆ (ภาค หรือ กลุ่ม)
+function countBy(getValue) {
     const counts = new Map();
     allBranches.forEach(b => {
-        if (!b.custom_region) return;
-        counts.set(b.custom_region, (counts.get(b.custom_region) || 0) + 1);
+        const value = getValue(b);
+        if (value === null || value === undefined) return;
+        counts.set(value, (counts.get(value) || 0) + 1);
     });
+    return counts;
+}
+
+// สร้างชิปกรองจากข้อมูลจริง — โหมดภาคเรียงตามจำนวนสาขา โหมดกลุ่มเรียงตามเลขกลุ่ม
+function renderFilterChips() {
+    const isGroupMode = chipMode === 'group';
+    const active = isGroupMode ? activeGroup : activeRegion;
+
+    const entries = isGroupMode
+        ? [...countBy(b => b.group_id).entries()]
+            .filter(([id]) => id !== PLACEHOLDER_GROUP_ID)
+            .sort((a, b) => a[0] - b[0])
+            .map(([id, count]) => ({ label: `ก.${id}`, value: id, count }))
+        : [...countBy(b => b.custom_region).entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([region, count]) => ({ label: region, value: region, count }));
+
+    const chips = [{ label: 'ทั้งหมด', value: null, count: allBranches.length }].concat(entries);
 
     const container = document.getElementById('filter-chips');
     container.innerHTML = '';
-
-    const chips = [{ label: 'ทั้งหมด', region: null, count: allBranches.length }].concat(
-        [...counts.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map(([region, count]) => ({ label: region, region, count }))
-    );
-
-    chips.forEach(({ label, region, count }) => {
+    chips.forEach(({ label, value, count }) => {
         const chip = document.createElement('button');
         chip.type = 'button';
-        chip.className = 'chip' + (activeRegion === region ? ' active' : '');
-        chip.setAttribute('aria-pressed', String(activeRegion === region));
+        chip.className = 'chip' + (active === value ? ' active' : '');
+        chip.setAttribute('aria-pressed', String(active === value));
         chip.innerHTML = `${esc(label)} <span class="chip-count">${count}</span>`;
         chip.onclick = () => {
             // กดชิปเดิมซ้ำ = ยกเลิกการกรอง
-            activeRegion = activeRegion === region ? null : region;
+            const next = active === value ? null : value;
+            if (isGroupMode) activeGroup = next; else activeRegion = next;
             renderFilterChips();
             applySearch(document.getElementById('branch-search').value);
+            container.scrollLeft = 0;
         };
         container.appendChild(chip);
     });
+}
+
+// สลับระหว่างชิปภาคกับชิปกลุ่ม — ล้างตัวกรองอีกโหมดทิ้ง เพื่อไม่ให้เหลือ
+// ตัวกรองที่ผู้ใช้มองไม่เห็นค้างอยู่
+function setChipMode(mode) {
+    if (chipMode === mode) return;
+    chipMode = mode;
+    if (mode === 'group') activeRegion = null; else activeGroup = null;
+
+    ['region', 'group'].forEach(m => {
+        const btn = document.getElementById(`chip-mode-${m}`);
+        btn.classList.toggle('active', chipMode === m);
+        btn.setAttribute('aria-pressed', String(chipMode === m));
+    });
+
+    renderFilterChips();
+    applySearch(document.getElementById('branch-search').value);
+    document.getElementById('filter-chips').scrollLeft = 0;
 }
 
 function applySearch(rawQuery) {
@@ -494,13 +531,14 @@ function applySearch(rawQuery) {
     const groupQuery = /^\d+$/.test(cleaned) ? cleaned : null;
 
     const matches = b => (!activeRegion || b.custom_region === activeRegion)
+        && (activeGroup === null || b.group_id === activeGroup)
         && branchMatchesQuery(b, query, groupQuery);
     const mapped = branches.filter(matches);
     const pending = branchesNoCoords.filter(matches);
 
     // ลิสต์อัปเดตทันทีเพื่อให้พิมพ์แล้วรู้สึกตอบสนอง
     renderBranchLists(mapped, pending);
-    const isFiltering = query.length > 0 || activeRegion !== null;
+    const isFiltering = query.length > 0 || activeRegion !== null || activeGroup !== null;
     if (isFiltering) openPanel(); else closePanel();
 
     // ส่วนแผนที่หน่วงไว้ เพราะการซ่อน/แสดงหมุดและ flyTo หนักกว่าการวาดลิสต์มาก
@@ -684,6 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('locate-me-btn').onclick = locateUser;
     document.getElementById('fit-thailand-btn').onclick = fitThailand;
+    document.getElementById('chip-mode-region').onclick = () => setChipMode('region');
+    document.getElementById('chip-mode-group').onclick = () => setChipMode('group');
     
     document.querySelector('.close-btn').onclick = closeBranchModal;
 

@@ -247,7 +247,7 @@ function renderMarkers() {
 
         marker.bindPopup(`
             <div class="popup-content">
-                <strong style="color:var(--primary-color)">สาขาที่ ${esc(branch.number)}</strong>
+                <strong style="color:var(--primary-color)">สาขา ${esc(branch.number)}</strong>
                 <div style="font-weight:600; margin: 4px 0;">${esc(branch.name)}</div>
                 <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${esc(branch.owner)}</p>
                 <button onclick="openBranchDetails(${Number(branch.id)})" class="popup-btn">ดูรายละเอียด</button>
@@ -555,7 +555,7 @@ function createBranchCard(branch, showDistance) {
     card.className = usable ? 'branch-card' : 'branch-card no-coords';
     card.innerHTML = `
         <div class="branch-card-header">
-            <div class="branch-name">สาขาที่ ${esc(branch.number)}: ${esc(branch.name)}</div>
+            <div class="branch-name">สาขา ${esc(branch.number)}: ${esc(branch.name)}</div>
             ${branch.group_id ? `<span class="group-badge">ก.${esc(branch.group_id)}</span>` : ''}
         </div>
         <div class="branch-location">${esc(branch.province && branch.province.name_th)} ${esc(branch.district && branch.district.name_th)}</div>
@@ -612,7 +612,7 @@ function openBranchDetails(id) {
         <h2 id="branch-detail-title" style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${esc(branch.name)}</h2>
         <div style="margin-bottom: 1.5rem;">
             <p><strong>หมายเลขสาขา:</strong> ${esc(branch.number)}</p>
-            <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${esc(branch.group_id) || 'ไม่ระบุ'}</span></p>
+            <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่ม ${esc(branch.group_id) || 'ไม่ระบุ'}</span></p>
             <p><strong>ผู้ดูแล:</strong> ${esc(branch.owner) || 'ไม่ระบุ'}</p>
             <p><strong>โทร:</strong> ${branch.owner_tel ? `<a href="tel:${esc(branch.owner_tel.replace(/\s+/g, ''))}" class="phone-link">${esc(branch.owner_tel)}</a>` : 'ไม่ระบุ'}</p>
             <p><strong>เวลาทำการ:</strong> ${esc(branch.opening_hours) || 'ไม่ระบุ'}</p>
@@ -655,7 +655,7 @@ function clearBranchFromUrl() {
 
 async function shareBranch(branch) {
     const url = branchUrl(branch.number);
-    const title = `สาขาที่ ${branch.number}: ${branch.name}`;
+    const title = `สาขา ${branch.number}: ${branch.name}`;
 
     // มือถือส่วนใหญ่มี Web Share API ให้เลือกส่งเข้า LINE ได้เลย
     if (navigator.share) {
@@ -683,7 +683,7 @@ function openBranchFromUrl() {
     const number = parseInt(raw, 10);
     const branch = allBranches.find(b => b.number === number);
     if (!branch) {
-        showToast(`ไม่พบสาขาที่ ${raw}`); // showToast ใช้ textContent จึงไม่ต้อง escape
+        showToast(`ไม่พบสาขา ${raw}`); // showToast ใช้ textContent จึงไม่ต้อง escape
         return;
     }
 

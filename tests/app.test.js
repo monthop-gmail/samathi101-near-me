@@ -30,7 +30,7 @@ setTimeout(async () => {
   check('สาขาไม่มีพิกัด โผล่ในลิสต์รอปรับพิกัด', $$('#pending-branches-list .branch-card').length, 1);
   type('0');
   check('ค้นเลข "0" เจอสำนักงานใหญ่ (บั๊ก falsy เดิม)',
-    $$('#all-branches-list .branch-name').some(e => e.textContent.includes('สาขาที่ 0:')), true);
+    $$('#all-branches-list .branch-name').some(e => e.textContent.includes('สาขา 0:')), true);
   type('');
   check('ล้างช่องค้นหาแล้วกลับมาครบ', $$('#all-branches-list .branch-card').length, expected.mapped);
 

@@ -1,0 +1,12 @@
+{
+  "name": "samathi101-near-me",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ค้นหาสาขาสถาบันพลังจิตตานุภาพที่อยู่ใกล้คุณที่สุด",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

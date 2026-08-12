@@ -1,6 +1,10 @@
 # Local Environments
 .env
 
+# Node (ใช้เฉพาะตอนรันเทส ไม่เกี่ยวกับการ deploy)
+node_modules/
+package-lock.json
+
 # MacOS hidden files
 .DS_Store
 

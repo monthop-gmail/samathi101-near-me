@@ -5,11 +5,21 @@ let allBranches = [];       // ทั้งหมดที่แสดงต่�
 let userLocation = null;
 let userMarker = null;
 let markers = [];
+let markerById = new Map();
+let searchMapTimer = null;
 let mapConfig = null;
 let adminMode = false;
 
 // สาขาที่ไม่ใช่สาขาจริง ไม่ต้องแสดงต่อผู้ใช้
 const INTERNAL_BRANCH_NUMBERS = new Set([999]);
+
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// ข้อมูลมาจาก API ภายนอก จึงต้อง escape ก่อนยัดลง innerHTML เสมอ
+function esc(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
+}
 
 // ข้อมูลบางสาขายังไม่ได้กรอกพิกัด และถูกบันทึกเป็น 0,0 ("00.00000") ซึ่งอยู่กลาง
 // มหาสมุทรแอตแลนติก ถ้าปักหมุดตามค่านี้ผู้ใช้จะเห็นหมุดกองอยู่นอกประเทศ
@@ -189,6 +199,7 @@ async function loadBranches() {
 function renderMarkers() {
     markers.forEach(m => map.removeLayer(m));
     markers = [];
+    markerById.clear();
 
     // branches มีเฉพาะสาขาที่พิกัดใช้งานได้แล้ว (กรองใน loadBranches)
     branches.forEach(branch => {
@@ -209,14 +220,44 @@ function renderMarkers() {
 
         marker.bindPopup(`
             <div class="popup-content">
-                <strong style="color:var(--primary-color)">สาขาที่ ${branch.number}</strong>
-                <div style="font-weight:600; margin: 4px 0;">${branch.name}</div>
-                <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${branch.owner || ''}</p>
-                <button onclick="openBranchDetails(${branch.id})" class="popup-btn">ดูรายละเอียด</button>
+                <strong style="color:var(--primary-color)">สาขาที่ ${esc(branch.number)}</strong>
+                <div style="font-weight:600; margin: 4px 0;">${esc(branch.name)}</div>
+                <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${esc(branch.owner)}</p>
+                <button onclick="openBranchDetails(${Number(branch.id)})" class="popup-btn">ดูรายละเอียด</button>
             </div>
         `);
         markers.push(marker);
+        markerById.set(branch.id, marker);
     });
+}
+
+// ซ่อน/แสดงหมุดให้ตรงกับผลการค้นหา (แตะเฉพาะหมุดที่สถานะเปลี่ยนจริง)
+function updateVisibleMarkers(visibleIds) {
+    markerById.forEach((marker, id) => {
+        const shouldShow = visibleIds.has(id);
+        const onMap = map.hasLayer(marker);
+        if (shouldShow && !onMap) marker.addTo(map);
+        else if (!shouldShow && onMap) map.removeLayer(marker);
+    });
+}
+
+// ซูมแผนที่ให้เห็นผลการค้นหาทั้งหมด (เว้นที่ให้ header และ bottom sheet)
+function fitToBranches(list) {
+    if (!list.length) return;
+
+    const isMobile = window.innerWidth < 768;
+    const padding = {
+        paddingTopLeft: [20, 90],
+        paddingBottomRight: [20, isMobile ? window.innerHeight * 0.55 : 40],
+        duration: 1.2
+    };
+
+    if (list.length === 1) {
+        map.flyToBounds(L.latLng(list[0].latitude, list[0].longitude).toBounds(1500), padding);
+        return;
+    }
+
+    map.flyToBounds(L.latLngBounds(list.map(b => [+b.latitude, +b.longitude])), padding);
 }
 
 // Haversine Formula for distance
@@ -338,16 +379,64 @@ function renderAllBranchesList() {
     renderBranchLists(branches, branchesNoCoords);
 }
 
+// เทียบคำค้นกับทุกฟิลด์ที่ผู้ใช้น่าจะพิมพ์: ชื่อสาขา เลขสาขา กลุ่ม จังหวัด อำเภอ ตำบล และภาค
+function branchMatchesQuery(branch, query, groupQuery) {
+    const fields = [
+        branch.name,
+        branch.custom_region,
+        branch.province && branch.province.name_th,
+        branch.province && branch.province.name_en,
+        branch.district && branch.district.name_th,
+        branch.sub_district && branch.sub_district.name_th,
+        branch.number
+    ];
+
+    if (fields.some(f => f !== null && f !== undefined && String(f).toLowerCase().includes(query))) {
+        return true;
+    }
+
+    if (branch.group_id) {
+        const gid = String(branch.group_id);
+        // ตรงกับตัวเลขในคำค้น (เช่น "10") หรือคำค้นแบบ "ก.10" / "กลุ่ม 10"
+        return gid.includes(query) || (groupQuery !== null && gid === groupQuery);
+    }
+
+    return false;
+}
+
+function applySearch(rawQuery) {
+    const query = rawQuery.toLowerCase().trim();
+
+    // Smart Group Query: ดึงเลขกลุ่มออกมาถ้าผู้ใช้พิมพ์ "ก.x" หรือ "กลุ่ม x"
+    const cleaned = query.replace('ก.', '').replace('กลุ่ม', '').trim();
+    const groupQuery = /^\d+$/.test(cleaned) ? cleaned : null;
+
+    const matches = b => branchMatchesQuery(b, query, groupQuery);
+    const mapped = branches.filter(matches);
+    const pending = branchesNoCoords.filter(matches);
+
+    // ลิสต์อัปเดตทันทีเพื่อให้พิมพ์แล้วรู้สึกตอบสนอง
+    renderBranchLists(mapped, pending);
+    if (query.length > 0) openPanel(); else closePanel();
+
+    // ส่วนแผนที่หน่วงไว้ เพราะการซ่อน/แสดงหมุดและ flyTo หนักกว่าการวาดลิสต์มาก
+    clearTimeout(searchMapTimer);
+    searchMapTimer = setTimeout(() => {
+        updateVisibleMarkers(new Set(mapped.map(b => b.id)));
+        if (query.length > 0) fitToBranches(mapped);
+    }, 250);
+}
+
 function createBranchCard(branch, showDistance) {
     const usable = hasUsableCoords(branch);
     const card = document.createElement('div');
     card.className = usable ? 'branch-card' : 'branch-card no-coords';
     card.innerHTML = `
         <div class="branch-card-header">
-            <div class="branch-name">สาขาที่ ${branch.number}: ${branch.name}</div>
-            ${branch.group_id ? `<span class="group-badge">ก.${branch.group_id}</span>` : ''}
+            <div class="branch-name">สาขาที่ ${esc(branch.number)}: ${esc(branch.name)}</div>
+            ${branch.group_id ? `<span class="group-badge">ก.${esc(branch.group_id)}</span>` : ''}
         </div>
-        <div class="branch-location">${branch.province ? branch.province.name_th : ''} ${branch.district ? branch.district.name_th : ''}</div>
+        <div class="branch-location">${esc(branch.province && branch.province.name_th)} ${esc(branch.district && branch.district.name_th)}</div>
         ${showDistance ? `<div class="branch-distance">ห่างจากคุณ ${branch.distance.toFixed(2)} กม.</div>` : ''}
     `;
     card.onclick = () => {
@@ -381,15 +470,15 @@ function openBranchDetails(id) {
            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.name)}" target="_blank" rel="noopener" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">ค้นหาชื่อสาขาใน Google Maps</a>`;
 
     const detailHtml = `
-        <h2 style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${branch.name}</h2>
+        <h2 style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${esc(branch.name)}</h2>
         <div style="margin-bottom: 1.5rem;">
-            <p><strong>หมายเลขสาขา:</strong> ${branch.number}</p>
-            <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${branch.group_id || 'ไม่ระบุ'}</span></p>
-            <p><strong>ผู้ดูแล:</strong> ${branch.owner || 'ไม่ระบุ'}</p>
-            <p><strong>โทร:</strong> ${branch.owner_tel ? `<a href="tel:${branch.owner_tel.replace(/\s+/g, '')}" class="phone-link">${branch.owner_tel}</a>` : 'ไม่ระบุ'}</p>
-            <p><strong>เวลาทำการ:</strong> ${branch.opening_hours || 'ไม่ระบุ'}</p>
-            <p><strong>จังหวัด:</strong> ${branch.province ? branch.province.name_th : 'ไม่ระบุ'}</p>
-            <p><strong>ภาค:</strong> ${branch.custom_region || 'ไม่ระบุ'}</p>
+            <p><strong>หมายเลขสาขา:</strong> ${esc(branch.number)}</p>
+            <p><strong>กลุ่มสาขา:</strong> <span class="group-text">กลุ่มที่ ${esc(branch.group_id) || 'ไม่ระบุ'}</span></p>
+            <p><strong>ผู้ดูแล:</strong> ${esc(branch.owner) || 'ไม่ระบุ'}</p>
+            <p><strong>โทร:</strong> ${branch.owner_tel ? `<a href="tel:${esc(branch.owner_tel.replace(/\s+/g, ''))}" class="phone-link">${esc(branch.owner_tel)}</a>` : 'ไม่ระบุ'}</p>
+            <p><strong>เวลาทำการ:</strong> ${esc(branch.opening_hours) || 'ไม่ระบุ'}</p>
+            <p><strong>จังหวัด:</strong> ${esc(branch.province && branch.province.name_th) || 'ไม่ระบุ'}</p>
+            <p><strong>ภาค:</strong> ${esc(branch.custom_region) || 'ไม่ระบุ'}</p>
         </div>
         ${mapsAction}
     `;
@@ -449,35 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Search input: Filter list without auto-expanding
-    document.getElementById('branch-search').oninput = (e) => {
-        const query = e.target.value.toLowerCase();
-
-        // Smart Group Query: Extract number if query starts with "ก." or "กลุ่ม"
-        const cleanQuery = query.replace('ก.', '').replace('กลุ่ม', '').trim();
-        const isNumeric = /^\d+$/.test(cleanQuery);
-
-        const matches = b => {
-             const nameMatch = b.name.toLowerCase().includes(query);
-             const provinceMatch = b.province && b.province.name_th.toLowerCase().includes(query);
-             const provinceEnMatch = b.province && b.province.name_en.toLowerCase().includes(query);
-             const numberMatch = b.number !== null && b.number !== undefined
-                 && b.number.toString().includes(query);
-
-             // Group Match
-             let groupMatch = false;
-             if (b.group_id) {
-                 const gid = b.group_id.toString();
-                 // Direct match with number (e.g., "10") or smart match (e.g., "ก.10")
-                 groupMatch = gid.includes(query) || (isNumeric && gid === cleanQuery);
-             }
-
-             return nameMatch || provinceMatch || provinceEnMatch || numberMatch || groupMatch;
-        };
-
-        renderBranchLists(branches.filter(matches), branchesNoCoords.filter(matches));
-
-        if (query.length > 0) openPanel(); else closePanel();
-    };
+    document.getElementById('branch-search').oninput = (e) => applySearch(e.target.value);
 });
 
 // Register Service Worker

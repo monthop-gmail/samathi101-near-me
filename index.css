@@ -198,6 +198,54 @@ h2 {
     margin-bottom: 2rem;
 }
 
+.pending-coords-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.pending-coords-section[hidden] {
+    display: none;
+}
+
+.count-badge {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-dim);
+    border-radius: 8px;
+    padding: 1px 8px;
+    font-size: 0.85rem;
+    margin-left: 0.35rem;
+}
+
+.section-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    margin-top: -0.5rem;
+}
+
+/* สาขาที่ยังไม่มีพิกัด: ทำให้ต่างจากการ์ดปกติ เพราะกดแล้วแผนที่จะไม่ขยับ */
+.branch-card.no-coords {
+    border-style: dashed;
+    opacity: 0.85;
+}
+
+.branch-card.no-coords .branch-location::before {
+    content: '❓';
+}
+
+.coords-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
 /* Branch Cards */
 .branch-card {
     background: var(--glass-bg);

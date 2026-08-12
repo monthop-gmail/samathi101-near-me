@@ -1,9 +1,24 @@
 let map;
-let branches = [];
+let branches = [];          // เฉพาะสาขาที่มีพิกัดใช้งานได้ (ใช้กับแผนที่ + ค้นหาใกล้ฉัน)
+let branchesNoCoords = [];  // สาขาที่พิกัดยังไม่ถูกต้อง แสดงในลิสต์แต่ไม่ปักหมุด
+let allBranches = [];       // ทั้งหมดที่แสดงต่อผู้ใช้ (ใช้ค้นหา id ตอนเปิดรายละเอียด)
 let userLocation = null;
+let userMarker = null;
 let markers = [];
 let mapConfig = null;
 let adminMode = false;
+
+// สาขาที่ไม่ใช่สาขาจริง ไม่ต้องแสดงต่อผู้ใช้
+const INTERNAL_BRANCH_NUMBERS = new Set([999]);
+
+// ข้อมูลบางสาขายังไม่ได้กรอกพิกัด และถูกบันทึกเป็น 0,0 ("00.00000") ซึ่งอยู่กลาง
+// มหาสมุทรแอตแลนติก ถ้าปักหมุดตามค่านี้ผู้ใช้จะเห็นหมุดกองอยู่นอกประเทศ
+function hasUsableCoords(branch) {
+    const lat = parseFloat(branch.latitude);
+    const lng = parseFloat(branch.longitude);
+    if (!isFinite(lat) || !isFinite(lng)) return false;
+    return Math.abs(lat) > 0.5 || Math.abs(lng) > 0.5;
+}
 
 // Initialize Map
 function initMap() {
@@ -33,7 +48,9 @@ function initMap() {
 // Load Configuration from config.json
 async function loadConfig() {
     try {
-        const response = await fetch('config.json?v=' + Date.now());
+        // ไม่ต้องใส่ cachebuster: _headers ตั้ง no-cache ให้อยู่แล้ว และการเติม ?v=
+        // ทำให้ Service Worker หาไฟล์ในแคชไม่เจอตอนออฟไลน์
+        const response = await fetch('config.json', { cache: 'no-cache' });
         const data = await response.json();
         mapConfig = data;
         console.log('Map configuration loaded:', mapConfig);
@@ -140,19 +157,23 @@ function fitThailand() {
 // Load Branches
 async function loadBranches() {
     try {
-        // Add cachebuster to force fresh data download
-        const response = await fetch('branches.json?v=' + Date.now());
+        // cache: 'no-cache' บังคับ revalidate กับ server (ใช้ ETag) โดยไม่ต้องเติม ?v=
+        // ซึ่งจะทำให้แคชของ Service Worker ใช้งานตอนออฟไลน์ไม่ได้
+        const response = await fetch('branches.json', { cache: 'no-cache' });
         const rawData = await response.json();
-        
-        // Keep all branches: showing raw data helps with data auditing (finding wrong coordinates)
-        branches = rawData.filter(b => {
-            const lat = parseFloat(b.latitude);
-            const lng = parseFloat(b.longitude);
-            
-            // Only skip if coordinates are truly missing/not numbers
-            return !isNaN(lat) && !isNaN(lng);
-        });
-        
+
+        allBranches = rawData.filter(b => !INTERNAL_BRANCH_NUMBERS.has(b.number));
+
+        // แยกสาขาที่พิกัดใช้ไม่ได้ออกจากแผนที่ แต่ยังแสดงในลิสต์เพื่อให้ติดต่อได้
+        // และเห็นชัดว่าสาขาไหนยังรอปรับพิกัด
+        branches = allBranches.filter(hasUsableCoords);
+        branchesNoCoords = allBranches.filter(b => !hasUsableCoords(b));
+
+        if (branchesNoCoords.length) {
+            console.warn(`${branchesNoCoords.length} สาขายังไม่มีพิกัดที่ใช้งานได้:`,
+                branchesNoCoords.map(b => `${b.number} ${b.name}`));
+        }
+
         renderMarkers();
         renderAllBranchesList();
         
@@ -169,33 +190,32 @@ function renderMarkers() {
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
+    // branches มีเฉพาะสาขาที่พิกัดใช้งานได้แล้ว (กรองใน loadBranches)
     branches.forEach(branch => {
-        if (branch.latitude && branch.longitude) {
-            const customIcon = L.divIcon({
-                className: 'custom-marker-wrapper',
-                html: `
-                    <div class="pulse"></div>
-                    <div class="custom-pin"></div>
-                `,
-                iconSize: [24, 24],
-                iconAnchor: [12, 24],
-                popupAnchor: [0, -24]
-            });
+        const customIcon = L.divIcon({
+            className: 'custom-marker-wrapper',
+            html: `
+                <div class="pulse"></div>
+                <div class="custom-pin"></div>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 24],
+            popupAnchor: [0, -24]
+        });
 
-            const marker = L.marker([branch.latitude, branch.longitude], {
-                icon: customIcon
-            }).addTo(map);
+        const marker = L.marker([branch.latitude, branch.longitude], {
+            icon: customIcon
+        }).addTo(map);
 
-            marker.bindPopup(`
-                <div class="popup-content">
-                    <strong style="color:var(--primary-color)">สาขาที่ ${branch.number}</strong>
-                    <div style="font-weight:600; margin: 4px 0;">${branch.name}</div>
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${branch.owner || ''}</p>
-                    <button onclick="openBranchDetails(${branch.id})" class="popup-btn">ดูรายละเอียด</button>
-                </div>
-            `);
-            markers.push(marker);
-        }
+        marker.bindPopup(`
+            <div class="popup-content">
+                <strong style="color:var(--primary-color)">สาขาที่ ${branch.number}</strong>
+                <div style="font-weight:600; margin: 4px 0;">${branch.name}</div>
+                <p style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">${branch.owner || ''}</p>
+                <button onclick="openBranchDetails(${branch.id})" class="popup-btn">ดูรายละเอียด</button>
+            </div>
+        `);
+        markers.push(marker);
     });
 }
 
@@ -256,7 +276,9 @@ function locateUser() {
            iconAnchor: [8, 8]
         });
 
-        L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
+        // ลบหมุดเดิมก่อน ไม่งั้นกดปุ่มซ้ำจะมีหมุดซ้อนกันเรื่อยๆ
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
             .bindPopup('ตำแหน่งของคุณ').openPopup();
 
         updateNearestBranches();
@@ -294,22 +316,32 @@ function updateNearestBranches() {
     });
 }
 
-function renderAllBranchesList() {
+// วาดลิสต์ "สาขาทั้งหมด" และ "รอปรับพิกัด" ตามผลการค้นหาที่ส่งเข้ามา
+function renderBranchLists(withCoords, withoutCoords) {
     const listElement = document.getElementById('all-branches-list');
     listElement.innerHTML = '';
-    
-    // Sort by branch number
-    const sorted = [...branches].sort((a,b) => a.number - b.number);
-    
-    sorted.forEach(b => {
-        const card = createBranchCard(b, false);
-        listElement.appendChild(card);
+    [...withCoords].sort((a, b) => a.number - b.number).forEach(b => {
+        listElement.appendChild(createBranchCard(b, false));
     });
+
+    const pendingSection = document.getElementById('pending-coords-section');
+    const pendingList = document.getElementById('pending-branches-list');
+    pendingList.innerHTML = '';
+    [...withoutCoords].sort((a, b) => a.number - b.number).forEach(b => {
+        pendingList.appendChild(createBranchCard(b, false));
+    });
+    pendingSection.hidden = withoutCoords.length === 0;
+    document.getElementById('pending-count').textContent = withoutCoords.length;
+}
+
+function renderAllBranchesList() {
+    renderBranchLists(branches, branchesNoCoords);
 }
 
 function createBranchCard(branch, showDistance) {
+    const usable = hasUsableCoords(branch);
     const card = document.createElement('div');
-    card.className = 'branch-card';
+    card.className = usable ? 'branch-card' : 'branch-card no-coords';
     card.innerHTML = `
         <div class="branch-card-header">
             <div class="branch-name">สาขาที่ ${branch.number}: ${branch.name}</div>
@@ -320,24 +352,33 @@ function createBranchCard(branch, showDistance) {
     `;
     card.onclick = () => {
         const isMobile = window.innerWidth < 768;
-        const branchLatLng = L.latLng(branch.latitude, branch.longitude);
-        
-        map.flyToBounds(branchLatLng.toBounds(500), {
-            paddingTopLeft: [0, 80],
-            paddingBottomRight: [0, isMobile ? window.innerHeight * 0.5 : 0],
-            duration: 2
-        });
-        
+
+        // สาขาที่ยังไม่มีพิกัดจะไม่ขยับแผนที่ (ไม่งั้นจะบินไปพิกัด 0,0)
+        if (usable) {
+            const branchLatLng = L.latLng(branch.latitude, branch.longitude);
+            map.flyToBounds(branchLatLng.toBounds(500), {
+                paddingTopLeft: [0, 80],
+                paddingBottomRight: [0, isMobile ? window.innerHeight * 0.5 : 0],
+                duration: 2
+            });
+        }
+
         openBranchDetails(branch.id);
-        if (isMobile) closePanel();
+        if (isMobile && usable) closePanel();
     };
     return card;
 }
 
 // Modal handling
 function openBranchDetails(id) {
-    const branch = branches.find(b => b.id === id);
+    const branch = allBranches.find(b => b.id === id);
     if (!branch) return;
+
+    // ไม่มีพิกัด = นำทางไม่ได้ ให้ค้นหาด้วยชื่อใน Google Maps แทน
+    const mapsAction = hasUsableCoords(branch)
+        ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}" target="_blank" rel="noopener" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">นำทางด้วย Google Maps</a>`
+        : `<div class="coords-warning">สาขานี้ยังไม่มีพิกัดในระบบ จึงยังนำทางอัตโนมัติไม่ได้</div>
+           <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.name)}" target="_blank" rel="noopener" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">ค้นหาชื่อสาขาใน Google Maps</a>`;
 
     const detailHtml = `
         <h2 style="color:var(--text-main); font-size: 1.5rem; margin-bottom: 1rem;">${branch.name}</h2>
@@ -350,7 +391,7 @@ function openBranchDetails(id) {
             <p><strong>จังหวัด:</strong> ${branch.province ? branch.province.name_th : 'ไม่ระบุ'}</p>
             <p><strong>ภาค:</strong> ${branch.custom_region || 'ไม่ระบุ'}</p>
         </div>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}" target="_blank" class="popup-btn" style="text-align:center; display:block; text-decoration:none;">นำทางด้วย Google Maps</a>
+        ${mapsAction}
     `;
 
     document.getElementById('branch-detail').innerHTML = detailHtml;
@@ -410,17 +451,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Search input: Filter list without auto-expanding
     document.getElementById('branch-search').oninput = (e) => {
         const query = e.target.value.toLowerCase();
-        
+
         // Smart Group Query: Extract number if query starts with "ก." or "กลุ่ม"
         const cleanQuery = query.replace('ก.', '').replace('กลุ่ม', '').trim();
         const isNumeric = /^\d+$/.test(cleanQuery);
 
-        const filtered = branches.filter(b => {
+        const matches = b => {
              const nameMatch = b.name.toLowerCase().includes(query);
              const provinceMatch = b.province && b.province.name_th.toLowerCase().includes(query);
              const provinceEnMatch = b.province && b.province.name_en.toLowerCase().includes(query);
-             const numberMatch = b.number && b.number.toString().includes(query);
-             
+             const numberMatch = b.number !== null && b.number !== undefined
+                 && b.number.toString().includes(query);
+
              // Group Match
              let groupMatch = false;
              if (b.group_id) {
@@ -430,15 +472,10 @@ document.addEventListener('DOMContentLoaded', () => {
              }
 
              return nameMatch || provinceMatch || provinceEnMatch || numberMatch || groupMatch;
-        });
-        
-        const listElement = document.getElementById('all-branches-list');
-        listElement.innerHTML = '';
-        filtered.forEach(b => {
-             const card = createBranchCard(b, false);
-             listElement.appendChild(card);
-        });
-        
+        };
+
+        renderBranchLists(branches.filter(matches), branchesNoCoords.filter(matches));
+
         if (query.length > 0) openPanel(); else closePanel();
     };
 });

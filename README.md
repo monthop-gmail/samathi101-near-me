@@ -60,10 +60,22 @@
 ### 1. การดึงข้อมูลใหม่จากฐานข้อมูลหลัก (API)
 ใช้เมื่อต้องการดึงข้อมูลสาขาล่าสุดจาก Server หลัก:
 ```bash
-# ต้องตั้งค่า Environment Variable ก่อนรัน (สอบถาม Token ได้ที่แอดมิน)
-export SAMATHI_API_TOKEN='Bearer YOUR_TOKEN_HERE'
-python3 scripts/fetch_and_process.py
+python3 scripts/fetch_and_process.py   # ขั้นตอนนี้จะล้าง group_id / custom_region
+python3 scripts/update_branches.py     # ต้องรันต่อทันที เพื่อเติมกลุ่ม/ภาคกลับจาก Excel
 ```
+
+> ⚠️ **ต้องรัน 2 คำสั่งนี้ติดกันเสมอ** เพราะ API ไม่มีฟิลด์ `group_id` และ `custom_region`
+> ถ้ารันแค่คำสั่งแรกแล้ว commit จะทำให้ข้อมูลกลุ่มสาขาหายทั้งไฟล์
+
+**เรื่อง Token:** endpoint `GET https://api.samathi101.com/branch/all/front` เป็น **public แล้ว ไม่ต้องใช้ token**
+สคริปต์ยังรองรับ `SAMATHI_API_TOKEN` อยู่ เผื่อวันหนึ่ง API กลับมาบังคับ auth — วิธีเอา token มาใช้:
+
+1. ล็อกอิน samathi101.com ด้วยบัญชี Google ที่มีสิทธิ์แอดมิน
+2. เปิด DevTools → แท็บ **Network** → คลิกอะไรก็ได้ที่ยิงไป `api.samathi101.com`
+3. ดูที่ **Request Headers** → คัดลอกค่าในบรรทัด `Authorization: Bearer eyJ...` ทั้งบรรทัด
+4. `export SAMATHI_API_TOKEN='Bearer eyJ...'` แล้วรันสคริปต์
+
+*Token เป็น Firebase ID token (project `will-power-prod`) **อายุแค่ 1 ชั่วโมง** ต้องคัดลอกใหม่ทุกครั้งที่ใช้ และห้าม commit ลง repo เด็ดขาด*
 
 ### 2. การอัปเดตกลุ่มสาขา (Excel Mapping)
 ใช้เมื่อได้รับไฟล์ Excel อัปเดตกลุ่มสาขาจากทีมงาน ให้นำไฟล์ไปวางในโฟลเดอร์ `data/` แล้วรัน:

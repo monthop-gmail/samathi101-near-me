@@ -4,6 +4,8 @@ import urllib.parse
 import os
 
 # --- การตั้งค่า (Configuration) ---
+# Endpoint /branch/all/front เป็น public ไม่ต้องใช้ token แล้ว
+# แต่ยังรองรับการส่ง token อยู่ เผื่อ API เปลี่ยนไปบังคับ auth ในอนาคต
 # ความปลอดภัย: ห้ามฮาร์ดโค้ด Token ลงในไฟล์เด็ดขาด ให้ดึงผ่าน Environment Variable แทน
 TOKEN = os.environ.get('SAMATHI_API_TOKEN')
 
@@ -25,21 +27,24 @@ REGION_MAP = {
 }
 
 def fetch_data():
-    if not TOKEN:
-        print("ERROR: ไม่พบ SAMATHI_API_TOKEN ใน Environment Variables")
-        print("กรุณารันคำสั่ง: export SAMATHI_API_TOKEN='Bearer your-token'")
-        return None
+    headers = {}
+    if TOKEN:
+        headers['Authorization'] = TOKEN
+        print("ใช้ SAMATHI_API_TOKEN จาก Environment Variable")
+    else:
+        print("ไม่พบ SAMATHI_API_TOKEN — ยิงแบบ public (endpoint นี้ไม่ต้องใช้ token)")
 
     print(f"Fetching data from {API_HOST}...")
-    headers = {'Authorization': TOKEN}
     conn = http.client.HTTPSConnection(API_HOST)
     conn.request("GET", API_PATH, headers=headers)
     response = conn.getresponse()
-    
+
     if response.status != 200:
         print(f"เกิดข้อผิดพลาดในการดึงข้อมูล: {response.status} {response.reason}")
+        if response.status in (401, 403):
+            print("API เริ่มบังคับ auth แล้ว — ดูวิธีเอา token ได้ใน README หัวข้อ Data Management")
         return None
-        
+
     data = response.read()
     conn.close()
     return json.loads(data.decode('utf-8'))
